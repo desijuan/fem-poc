@@ -1,6 +1,7 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 const WoodPole = @import("wood_pole.zig");
+const Matrix = @import("matrix.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
@@ -28,4 +29,16 @@ pub fn main() !void {
     for (mesh.nodes) |node| utils.print(node);
     for (mesh.beams) |beam| utils.print(beam);
     for (mesh.bcs) |bc| utils.print(bc);
+
+    const m = try Matrix.init(allocator, 3, 3);
+    defer m.deinit(allocator);
+
+    try m.setEntries(&.{ 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+    m.set(3, 3, 99.0);
+
+    m.e(2, 2).* = 7.75;
+
+    std.debug.print("m[3, 3]: {}\n", .{m.get(3, 3)});
+    std.debug.print("m[2, 2]: {}\n", .{m.e(2, 2).*});
+    std.debug.print("m: {any}\n", .{m.entries});
 }
