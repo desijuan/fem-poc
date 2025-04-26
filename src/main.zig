@@ -35,15 +35,8 @@ pub fn main() !void {
     // wip ...
     //
 
-    const m = try Matrix.init(gpa, 3, 3);
-    defer m.deinit(gpa);
+}
 
-    try m.setEntries(&.{ 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-    m.set(3, 3, 99.0);
-
-    m.e(2, 2).* = 7.75;
-
-    std.debug.print("m[3, 3]: {}\n", .{m.get(3, 3)});
-    std.debug.print("m[2, 2]: {}\n", .{m.e(2, 2).*});
-    std.debug.print("m: {any}\n", .{m.entries});
+comptime {
+    _ = @import("Matrix.zig");
 }
