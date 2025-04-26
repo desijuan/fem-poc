@@ -1,10 +1,10 @@
 const std = @import("std");
 
 pub const desired_element_size = 0.5;
-pub const gravity = Vect3{ .x = 0, .y = 0, .z = -9.8 };
+pub const gravity = Vec3{ .x = 0, .y = 0, .z = -9.8 };
 
 material_properties: []MaterialProperties,
-nodes: []Vect3,
+nodes: []Vec3,
 beams: []Beam,
 bcs: []BeamBC,
 
@@ -23,7 +23,7 @@ pub const MaterialProperties = struct {
     density: f64, // fRho [kg/m^3]
 };
 
-pub const Vect3 = struct {
+pub const Vec3 = struct {
     x: f64,
     y: f64,
     z: f64,

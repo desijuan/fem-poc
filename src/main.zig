@@ -1,15 +1,16 @@
 const std = @import("std");
 const utils = @import("utils.zig");
-const WoodPole = @import("wood_pole.zig");
-const Matrix = @import("matrix.zig");
+const WoodPole = @import("WoodPole.zig");
+const Matrix = @import("Matrix.zig");
+const Mesh = @import("Mesh.zig");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
-    defer _ = gpa.deinit();
+    var gpa_instance = std.heap.DebugAllocator(.{ .safety = true }){};
+    defer _ = gpa_instance.deinit();
 
-    const allocator = gpa.allocator();
+    const gpa = gpa_instance.allocator();
 
-    const woodPole = WoodPole{
+    const pole = WoodPole{
         .height = 1.036e1,
         .bottom_diameter = 2.911e-1,
         .top_diameter = 1.86e-1,
@@ -20,18 +21,22 @@ pub fn main() !void {
         .density = 5.4463e2,
     };
 
-    utils.print(woodPole);
+    utils.print(pole);
 
-    const mesh = try woodPole.buildMesh(allocator);
-    defer mesh.deinit(allocator);
+    const mesh: Mesh = try pole.buildMesh(gpa);
+    defer mesh.deinit(gpa);
 
     for (mesh.material_properties) |props| utils.print(props);
     for (mesh.nodes) |node| utils.print(node);
     for (mesh.beams) |beam| utils.print(beam);
     for (mesh.bcs) |bc| utils.print(bc);
 
-    const m = try Matrix.init(allocator, 3, 3);
-    defer m.deinit(allocator);
+    //
+    // wip ...
+    //
+
+    const m = try Matrix.init(gpa, 3, 3);
+    defer m.deinit(gpa);
 
     try m.setEntries(&.{ 1, 2, 3, 4, 5, 6, 7, 8, 9 });
     m.set(3, 3, 99.0);

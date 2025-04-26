@@ -1,6 +1,6 @@
 const std = @import("std");
 const utils = @import("utils.zig");
-const Mesh = @import("mesh.zig");
+const Mesh = @import("Mesh.zig");
 
 const PI = std.math.pi;
 
@@ -16,7 +16,7 @@ density: f64,
 const Self = @This();
 
 pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
-    var material_properties = try allocator.alloc(Mesh.MaterialProperties, 1);
+    var material_properties: []Mesh.MaterialProperties = try allocator.alloc(Mesh.MaterialProperties, 1);
     material_properties[0] = Mesh.MaterialProperties{
         .elasticity_modulus = self.modulus_of_elasticity,
         .shear_modulus = self.shear_modulus,
@@ -26,9 +26,9 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
     // TODO: Safety checks here!!
     const n_beams: usize = @as(usize, @intFromFloat(self.height / Mesh.desired_element_size)) + 1;
 
-    var nodes = try allocator.alloc(Mesh.Vect3, n_beams + 1);
+    var nodes: []Mesh.Vec3 = try allocator.alloc(Mesh.Vec3, n_beams + 1);
     for (0..n_beams) |i| {
-        nodes[i] = Mesh.Vect3{
+        nodes[i] = Mesh.Vec3{
             .x = 0.0,
             .y = 0.0,
             .z = @as(f32, @floatFromInt(i)) * Mesh.desired_element_size,
@@ -37,14 +37,14 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
 
     } else {
         // Last Node
-        nodes[n_beams] = Mesh.Vect3{
+        nodes[n_beams] = Mesh.Vec3{
             .x = 0.0,
             .y = 0.0,
             .z = self.height,
         };
     }
 
-    var beams = try allocator.alloc(Mesh.Beam, n_beams);
+    var beams: []Mesh.Beam = try allocator.alloc(Mesh.Beam, n_beams);
     for (0..n_beams) |i| {
         const diameter: f64 = utils.evalLine(
             (nodes[i].z + nodes[i + 1].z) / 2.0,
@@ -68,7 +68,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
         };
     }
 
-    var bcs = try allocator.alloc(Mesh.BeamBC, 1);
+    var bcs: []Mesh.BeamBC = try allocator.alloc(Mesh.BeamBC, 1);
     bcs[0] = Mesh.BeamBC{
         .node_index = 0,
         .beam_index = 0,
