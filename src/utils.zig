@@ -4,12 +4,12 @@ pub fn print(val: anytype) void {
     const T = @TypeOf(val);
     const typeInfo: std.builtin.Type = @typeInfo(T);
 
-    if (typeInfo != .Struct) {
+    if (typeInfo != .@"struct") {
         @compileError("Expecting a Struct type, got " ++ @tagName(typeInfo));
     }
 
     std.debug.print("{s} {{\n", .{@typeName(T)});
-    inline for (typeInfo.Struct.fields) |field| {
+    inline for (typeInfo.@"struct".fields) |field| {
         std.debug.print("   {s}: {},\n", .{ field.name, @field(val, field.name) });
     }
     std.debug.print("}}\n", .{});
