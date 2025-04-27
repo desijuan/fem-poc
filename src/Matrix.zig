@@ -39,6 +39,14 @@ pub fn setEntries(self: Self, entries: []const f64) error{WrongSize}!void {
     for (0..self.entries.len) |i| self.entries[i] = entries[i];
 }
 
+pub fn print(self: Self) void {
+    for (0..self.n_rows) |i| {
+        std.debug.print("{d:3}: [ {d:.2}", .{ i + 1, self.entries[i] });
+        for (1..self.n_cols) |j| std.debug.print(", {d:.2}", .{self.entries[j * self.n_rows + i]});
+        std.debug.print(" ]\n", .{});
+    }
+}
+
 const t = std.testing;
 
 test init {

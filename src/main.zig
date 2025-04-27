@@ -34,7 +34,13 @@ pub fn main() !void {
     //
     // wip ...
     //
+    const m_stiffness: Matrix = blk: {
+        const n_nodes: u32 = @intCast(mesh.nodes.len);
+        break :blk try Matrix.init(gpa, n_nodes, n_nodes);
+    };
+    defer m_stiffness.deinit(gpa);
 
+    m_stiffness.print();
 }
 
 comptime {
