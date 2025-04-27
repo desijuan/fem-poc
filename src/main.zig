@@ -15,32 +15,41 @@ pub fn main() !void {
         .bottom_diameter = 2.911e-1,
         .top_diameter = 1.86e-1,
         .fiber_strength = 5.52e7,
-        .reduce_strength_factor = 3e-1,
         .modulus_of_elasticity = 1.468e10,
         .shear_modulus = 1e9,
         .density = 5.4463e2,
     };
 
-    utils.print(pole);
+    std.debug.print("{}", .{pole});
 
     const mesh: Mesh = try pole.buildMesh(gpa);
     defer mesh.deinit(gpa);
 
-    for (mesh.material_properties) |props| utils.print(props);
-    for (mesh.nodes) |node| utils.print(node);
-    for (mesh.beams) |beam| utils.print(beam);
-    for (mesh.bcs) |bc| utils.print(bc);
+    for (mesh.material_properties) |props| std.debug.print("{}", .{props});
+    for (mesh.nodes) |node| std.debug.print("{}", .{node});
+    for (mesh.beams) |beam| std.debug.print("{}", .{beam});
+    for (mesh.bcs) |bc| std.debug.print("{}", .{bc});
 
     //
     // wip ...
     //
-    const m_stiffness: Matrix = blk: {
+    const m_stiffness, const v_load, const v_sol = blk: {
         const n_nodes: u32 = @intCast(mesh.nodes.len);
-        break :blk try Matrix.init(gpa, n_nodes, n_nodes);
+
+        const K = try Matrix.init(gpa, n_nodes, n_nodes);
+        errdefer K.deinit(gpa);
+        const v = try Matrix.init(gpa, n_nodes, 1);
+        errdefer v.deinit(gpa);
+        const f = try Matrix.init(gpa, n_nodes, 1);
+        errdefer f.deinit(gpa);
+
+        break :blk [3]Matrix{ K, v, f };
     };
-    defer m_stiffness.deinit(gpa);
+    defer for ([3]Matrix{ v_sol, v_load, m_stiffness }) |m| m.deinit(gpa);
 
     std.debug.print("{}", .{m_stiffness});
+    std.debug.print("{}", .{v_load});
+    std.debug.print("{}", .{v_sol});
 }
 
 comptime {

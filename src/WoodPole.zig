@@ -8,7 +8,6 @@ height: f64,
 bottom_diameter: f64,
 top_diameter: f64,
 fiber_strength: f64,
-reduce_strength_factor: f64,
 modulus_of_elasticity: f64,
 shear_modulus: f64,
 density: f64,
@@ -93,3 +92,5 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
         .bcs = bcs,
     };
 }
+
+pub const format = utils.structFormatFn(Self);

@@ -1,4 +1,5 @@
 const std = @import("std");
+const utils = @import("utils.zig");
 
 pub const desired_element_size = 0.5;
 pub const gravity = Vec3{ .x = 0, .y = 0, .z = -9.8 };
@@ -21,12 +22,16 @@ pub const MaterialProperties = struct {
     elasticity_modulus: f64, // fE [N/m^2]
     shear_modulus: f64, // fG [N/m^2]
     density: f64, // fRho [kg/m^3]
+
+    pub const format = utils.structFormatFn(@This());
 };
 
 pub const Vec3 = struct {
     x: f64,
     y: f64,
     z: f64,
+
+    pub const format = utils.structFormatFn(@This());
 };
 
 pub const Beam = struct {
@@ -38,6 +43,8 @@ pub const Beam = struct {
     moment_y: f64, // fIy
     fJp: f64, // ?
     fIp: f64, // ?
+
+    pub const format = utils.structFormatFn(@This());
 };
 
 pub const BeamBC = struct {
@@ -55,6 +62,8 @@ pub const BeamBC = struct {
     value3: f64,
     value4: f64,
     value5: f64,
+
+    pub const format = utils.structFormatFn(@This());
 };
 
 const BCType = enum {
