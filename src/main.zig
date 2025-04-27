@@ -40,7 +40,7 @@ pub fn main() !void {
     };
     defer m_stiffness.deinit(gpa);
 
-    m_stiffness.print();
+    std.debug.print("{}", .{m_stiffness});
 }
 
 comptime {

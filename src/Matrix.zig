@@ -39,11 +39,18 @@ pub fn setEntries(self: Self, entries: []const f64) error{WrongSize}!void {
     for (0..self.entries.len) |i| self.entries[i] = entries[i];
 }
 
-pub fn print(self: Self) void {
+pub fn format(
+    self: Self,
+    comptime fmt: []const u8,
+    _: std.fmt.FormatOptions,
+    out_stream: anytype,
+) !void {
+    if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+
     for (0..self.n_rows) |i| {
-        std.debug.print("{d:3}: [ {d:.2}", .{ i + 1, self.entries[i] });
-        for (1..self.n_cols) |j| std.debug.print(", {d:.2}", .{self.entries[j * self.n_rows + i]});
-        std.debug.print(" ]\n", .{});
+        try std.fmt.format(out_stream, "{d:3}: [ {d:.2}", .{ i + 1, self.entries[i] });
+        for (1..self.n_cols) |j| try std.fmt.format(out_stream, ", {d:.2}", .{self.entries[j * self.n_rows + i]});
+        try std.fmt.format(out_stream, " ]\n", .{});
     }
 }
 
@@ -95,11 +102,11 @@ test set {
     try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 0, 1.0));
     try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 4, 1.0));
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
-
     // [ 1, 2, 3 ]
     // [ 4, 5, 6 ]
     // [ 7, 8, 9 ]
+
+    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
     try m.set(3, 3, 99.0);
     try m.set(2, 2, 7.75);
@@ -108,4 +115,27 @@ test set {
     try t.expectApproxEqAbs(2.0, try m.get(1, 2), 1e-12);
     try t.expectApproxEqAbs(99.0, try m.get(3, 3), 1e-12);
     try t.expectApproxEqAbs(7.75, try m.get(2, 2), 1e-12);
+}
+
+test format {
+    const expected =
+        \\  1: [ 1.00, 2.00, 3.00 ]
+        \\  2: [ 4.00, 5.00, 6.00 ]
+        \\  3: [ 7.00, 8.00, 9.00 ]
+        \\
+    ;
+
+    const ta = t.allocator;
+
+    const m = try init(ta, 3, 3);
+    defer m.deinit(ta);
+
+    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+
+    var line_buffer: [expected.len]u8 = undefined;
+    var fbs: std.io.FixedBufferStream([]u8) = std.io.fixedBufferStream(&line_buffer);
+
+    try fbs.writer().print("{}", .{m});
+
+    try t.expectEqualSlices(u8, expected, fbs.getWritten());
 }
