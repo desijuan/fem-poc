@@ -4,7 +4,7 @@ const utils = @import("utils.zig");
 pub const desired_element_size = 0.5;
 pub const gravity = Vec3{ .x = 0, .y = 0, .z = -9.8 };
 
-material_properties: []MaterialProperties,
+mat_props: []MaterialProperties,
 nodes: []Vec3,
 beams: []Beam,
 bcs: []BeamBC,
@@ -12,7 +12,7 @@ bcs: []BeamBC,
 const Self = @This();
 
 pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
-    allocator.free(self.material_properties);
+    allocator.free(self.mat_props);
     allocator.free(self.nodes);
     allocator.free(self.beams);
     allocator.free(self.bcs);
@@ -35,9 +35,9 @@ pub const Vec3 = struct {
 };
 
 pub const Beam = struct {
-    material_props_index: u32,
-    n0_index: u32,
-    n1_index: u32,
+    mat_props_idx: u32,
+    n0_idx: u32,
+    n1_idx: u32,
     cross_area: f64, // fA
     moment_x: f64, // fIz
     moment_y: f64, // fIy
@@ -48,8 +48,8 @@ pub const Beam = struct {
 };
 
 pub const BeamBC = struct {
-    node_index: u32,
-    beam_index: u32,
+    node_idx: u32,
+    beam_idx: u32,
     type0: BCType,
     type1: BCType,
     type2: BCType,

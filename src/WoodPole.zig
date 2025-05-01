@@ -15,22 +15,22 @@ density: f64,
 const Self = @This();
 
 pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
-    var material_properties: []Mesh.MaterialProperties = try allocator.alloc(Mesh.MaterialProperties, 1);
-    material_properties[0] = Mesh.MaterialProperties{
+    var mat_props: []Mesh.MaterialProperties = try allocator.alloc(Mesh.MaterialProperties, 1);
+    mat_props[0] = Mesh.MaterialProperties{
         .elasticity_modulus = self.modulus_of_elasticity,
         .shear_modulus = self.shear_modulus,
         .density = self.density,
     };
 
-    // TODO: Safety checks here!!
-    const n_beams: usize = @as(usize, @intFromFloat(self.height / Mesh.desired_element_size)) + 1;
+    const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / Mesh.desired_element_size)));
+    const beam_size: f64 = self.height / @as(f64, @floatFromInt(n_beams));
 
     var nodes: []Mesh.Vec3 = try allocator.alloc(Mesh.Vec3, n_beams + 1);
     for (0..n_beams) |i| {
         nodes[i] = Mesh.Vec3{
             .x = 0.0,
             .y = 0.0,
-            .z = @as(f32, @floatFromInt(i)) * Mesh.desired_element_size,
+            .z = @as(f64, @floatFromInt(i)) * beam_size,
         };
         // TODO: TCXWoodPoleFem.fPoleNodesList[i] = i
 
@@ -56,9 +56,9 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
         const moment: f64 = PI * (diameter * diameter * diameter * diameter) / 64.0;
 
         beams[i] = Mesh.Beam{
-            .material_props_index = 0,
-            .n0_index = @intCast(i),
-            .n1_index = @intCast(i + 1),
+            .mat_props_idx = 0,
+            .n0_idx = @intCast(i),
+            .n1_idx = @intCast(i + 1),
             .cross_area = PI * diameter * diameter / 4.0,
             .moment_x = moment,
             .moment_y = moment,
@@ -69,8 +69,8 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
 
     var bcs: []Mesh.BeamBC = try allocator.alloc(Mesh.BeamBC, 1);
     bcs[0] = Mesh.BeamBC{
-        .node_index = 0,
-        .beam_index = 0,
+        .node_idx = 0,
+        .beam_idx = 0,
         .type0 = .Support,
         .type1 = .Support,
         .type2 = .Support,
@@ -86,7 +86,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
     };
 
     return Mesh{
-        .material_properties = material_properties,
+        .mat_props = mat_props,
         .nodes = nodes,
         .beams = beams,
         .bcs = bcs,

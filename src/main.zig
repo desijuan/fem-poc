@@ -25,7 +25,7 @@ pub fn main() !void {
     const mesh: Mesh = try pole.buildMesh(gpa);
     defer mesh.deinit(gpa);
 
-    for (mesh.material_properties) |props| std.debug.print("{}", .{props});
+    for (mesh.mat_props) |props| std.debug.print("{}", .{props});
     for (mesh.nodes) |node| std.debug.print("{}", .{node});
     for (mesh.beams) |beam| std.debug.print("{}", .{beam});
     for (mesh.bcs) |bc| std.debug.print("{}", .{bc});
@@ -45,11 +45,27 @@ pub fn main() !void {
 
         break :blk [3]Matrix{ K, v, f };
     };
-    defer for ([3]Matrix{ v_sol, v_load, m_stiffness }) |m| m.deinit(gpa);
+    defer for ([3]Matrix{ m_stiffness, v_load, v_sol }) |m| m.deinit(gpa);
 
     std.debug.print("{}", .{m_stiffness});
     std.debug.print("{}", .{v_load});
     std.debug.print("{}", .{v_sol});
+
+    const m_ek, const v_ef = blk: {
+        const n_eq: u32 = 12;
+
+        const ek = try Matrix.init(gpa, n_eq, n_eq);
+        errdefer ek.deinit(gpa);
+
+        const ef = try Matrix.init(gpa, n_eq, 1);
+        errdefer ef.deinit(gpa);
+
+        break :blk [2]Matrix{ ek, ef };
+    };
+    defer for ([2]Matrix{ m_ek, v_ef }) |m| m.deinit(gpa);
+
+    std.debug.print("{}", .{m_ek});
+    std.debug.print("{}", .{v_ef});
 }
 
 comptime {
