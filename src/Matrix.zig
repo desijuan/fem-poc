@@ -4,9 +4,9 @@ n_rows: u32,
 n_cols: u32,
 entries: []f64,
 
-pub const Error = error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds };
-
 const Self = @This();
+
+pub const Error = error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds };
 
 pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) !Self {
     const entries = try allocator.alloc(f64, n_rows * n_cols);
@@ -41,9 +41,15 @@ pub fn set(self: Self, i: usize, j: usize, value: f64) Error!void {
     self.entries[(j - 1) * self.n_rows + i - 1] = value;
 }
 
+pub fn addTo(self: Self, i: usize, j: usize, value: f64) Error!void {
+    if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
+    if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
+
+    self.entries[(j - 1) * self.n_rows + i - 1] += value;
+}
+
 pub fn setEntries(self: Self, entries: []const f64) error{WrongSize}!void {
-    if (self.entries.len != entries.len)
-        return error.WrongSize;
+    if (self.entries.len != entries.len) return error.WrongSize;
 
     for (0..self.entries.len) |i| self.entries[i] = entries[i];
 }
@@ -146,6 +152,32 @@ test set {
     try t.expectEqual(2.0, try m.get(1, 2));
     try t.expectEqual(99.0, try m.get(3, 3));
     try t.expectEqual(7.75, try m.get(2, 2));
+}
+
+test addTo {
+    const ta = t.allocator;
+
+    const m = try init(ta, 3, 3);
+    defer m.deinit(ta);
+
+    try t.expectError(error.RowIndexOutOfBounds, m.set(0, 1, 1.0));
+    try t.expectError(error.RowIndexOutOfBounds, m.set(4, 1, 1.0));
+    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 0, 1.0));
+    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 4, 1.0));
+
+    // [ 1, 2, 3 ]
+    // [ 4, 5, 6 ]
+    // [ 7, 8, 9 ]
+
+    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+
+    try m.addTo(1, 1, 99.0);
+    try m.addTo(2, 2, 7.75);
+
+    try t.expectEqual(100.0, try m.get(1, 1));
+    try t.expectEqual(2.0, try m.get(1, 2));
+    try t.expectEqual(9.0, try m.get(3, 3));
+    try t.expectEqual(12.75, try m.get(2, 2));
 }
 
 test format {

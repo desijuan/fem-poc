@@ -27,7 +27,7 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.bcs);
 }
 
-pub fn calcLocalKforBeam(self: Self, idx: usize, ek: Matrix, ef: Matrix) (error{WrongNEQ} || Matrix.Error)!void {
+pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) (error{WrongNEQ} || Matrix.Error)!void {
     if (ek.n_rows != NEQ or ek.n_cols != NEQ or ef.n_rows != NEQ) return error.WrongNEQ;
 
     const beam: Beam = self.beams[idx];
@@ -106,4 +106,8 @@ pub fn calcLocalKforBeam(self: Self, idx: usize, ek: Matrix, ef: Matrix) (error{
     try ek.set(6, 12, value / 2.0);
     try ek.set(12, 6, value / 2.0);
     try ek.set(12, 12, value);
+}
+
+pub fn getEquationIndicesForBeam(self: Self, idx: u32, eq_idxs: *[12]u32) void {
+    self.beams[idx].getEquationIndices(eq_idxs);
 }

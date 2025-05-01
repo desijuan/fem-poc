@@ -28,8 +28,8 @@ pub fn main() !void {
     //
     // wip ...
     //
-    const m_stiffness, const v_load, const v_sol = blk: {
-        const n_nodes: u32 = @intCast(mesh.nodes.len);
+    const m_K, const v_f, const v_v = blk: {
+        const n_nodes: u32 = @intCast(mesh.nodes.len * 6);
 
         const K = try Matrix.init(gpa, n_nodes, n_nodes);
         errdefer K.deinit(gpa);
@@ -40,7 +40,7 @@ pub fn main() !void {
 
         break :blk [3]Matrix{ K, v, f };
     };
-    defer for ([3]Matrix{ m_stiffness, v_load, v_sol }) |m| m.deinit(gpa);
+    defer for ([3]Matrix{ m_K, v_f, v_v }) |m| m.deinit(gpa);
 
     const m_ek, const v_ef = blk: {
         const n_eq: u32 = 12;
@@ -55,9 +55,37 @@ pub fn main() !void {
     };
     defer for ([2]Matrix{ m_ek, v_ef }) |m| m.deinit(gpa);
 
-    try mesh.calcLocalKforBeam(0, m_ek, v_ef);
+    {
+        var eq_idxs: [12]u32 = undefined;
+        @memset(&eq_idxs, 0);
 
-    std.debug.print("m_ek:\n{}", .{m_ek});
+        for (0..mesh.beams.len) |idx| {
+            defer {
+                for ([_]Matrix{ m_ek, v_ef }) |m| m.reset();
+                @memset(&eq_idxs, 0);
+            }
+
+            const beam_idx: u32 = @intCast(idx);
+
+            try mesh.calcLocalKforBeam(beam_idx, m_ek, v_ef);
+
+            std.debug.print("m_ek:\n{}", .{m_ek});
+
+            mesh.getEquationIndicesForBeam(beam_idx, &eq_idxs);
+
+            std.debug.print("eq_idxs: {any}\n", .{eq_idxs});
+
+            for (1..7) |i| {
+                const ieq: u32 = eq_idxs[i - 1];
+                for (1..7) |j| {
+                    const jeq: u32 = eq_idxs[j - 1];
+                    try m_K.addTo(ieq, jeq, try m_ek.get(i, j));
+                }
+            }
+        }
+    }
+
+    std.debug.print("m_K:\n{}", .{m_K});
 }
 
 comptime {

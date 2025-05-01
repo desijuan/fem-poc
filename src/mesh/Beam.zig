@@ -16,3 +16,10 @@ fIp: f64, // ?
 const Self = @This();
 
 pub const format = @import("../utils.zig").structFormatFn(Self);
+
+pub fn getEquationIndices(self: Self, eq_idxs: *[12]u32) void {
+    for (1..7) |k| {
+        eq_idxs[k - 1] = 6 * self.n0_idx + @as(u32, @intCast(k));
+        eq_idxs[k - 1 + 6] = 6 * self.n1_idx + @as(u32, @intCast(k));
+    }
+}
