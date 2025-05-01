@@ -69,5 +69,6 @@ pub fn main() !void {
 }
 
 comptime {
+    _ = @import("utils.zig");
     _ = @import("Matrix.zig");
 }

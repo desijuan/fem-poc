@@ -1,7 +1,9 @@
 const std = @import("std");
 
-pub inline fn evalLine(x: f64, x0: f64, y0: f64, x1: f64, y1: f64) f64 {
-    return (x - x0) * (y1 - y0) / (x1 - x0) + y0;
+const R = struct { x0: f64, y0: f64, x1: f64, y1: f64 };
+
+pub inline fn evalLine(x: f64, r: R) f64 {
+    return (x - r.x0) * (r.y1 - r.y0) / (r.x1 - r.x0) + r.y0;
 }
 
 pub fn structFormatFn(comptime T: type) fn (
@@ -34,4 +36,14 @@ pub fn structFormatFn(comptime T: type) fn (
             try std.fmt.format(out_stream, "}}\n", .{});
         }
     }.format;
+}
+
+const t = std.testing;
+
+test evalLine {
+    const r = R{ .x0 = 0.0, .y0 = 0.0, .x1 = 1.0, .y1 = 2.0 };
+
+    try t.expectEqual(0.0, evalLine(0.0, r));
+    try t.expectEqual(1.0, evalLine(0.5, r));
+    try t.expectEqual(2.0, evalLine(1.0, r));
 }

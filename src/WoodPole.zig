@@ -47,10 +47,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
     for (0..n_beams) |i| {
         const diameter: f64 = utils.evalLine(
             (nodes[i].z + nodes[i + 1].z) / 2.0,
-            0.0,
-            self.bottom_diameter,
-            self.height,
-            self.top_diameter,
+            .{ .x0 = 0.0, .y0 = self.bottom_diameter, .x1 = self.height, .y1 = self.top_diameter },
         );
 
         const moment: f64 = PI * (diameter * diameter * diameter * diameter) / 64.0;
