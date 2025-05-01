@@ -7,10 +7,13 @@ entries: []f64,
 const Self = @This();
 
 pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) !Self {
+    const entries = try allocator.alloc(f64, n_rows * n_cols);
+    @memset(entries, 0);
+
     return .{
         .n_rows = n_rows,
         .n_cols = n_cols,
-        .entries = try allocator.alloc(f64, n_rows * n_cols),
+        .entries = entries,
     };
 }
 
@@ -62,7 +65,7 @@ test init {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    for (0..9) |i| try t.expectApproxEqAbs(0.0, m.entries[i], 1e-12);
+    for (0..9) |i| try t.expectEqual(0, m.entries[i]);
 }
 
 test get {
@@ -82,13 +85,13 @@ test get {
 
     try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
-    try t.expectApproxEqAbs(1.0, try m.get(1, 1), 1e-12);
-    try t.expectApproxEqAbs(2.0, try m.get(1, 2), 1e-12);
-    try t.expectApproxEqAbs(3.0, try m.get(1, 3), 1e-12);
-    try t.expectApproxEqAbs(4.0, try m.get(2, 1), 1e-12);
-    try t.expectApproxEqAbs(7.0, try m.get(3, 1), 1e-12);
-    try t.expectApproxEqAbs(9.0, try m.get(3, 3), 1e-12);
-    try t.expectApproxEqAbs(5.0, try m.get(2, 2), 1e-12);
+    try t.expectEqual(1.0, try m.get(1, 1));
+    try t.expectEqual(2.0, try m.get(1, 2));
+    try t.expectEqual(3.0, try m.get(1, 3));
+    try t.expectEqual(4.0, try m.get(2, 1));
+    try t.expectEqual(7.0, try m.get(3, 1));
+    try t.expectEqual(9.0, try m.get(3, 3));
+    try t.expectEqual(5.0, try m.get(2, 2));
 }
 
 test set {
@@ -111,10 +114,10 @@ test set {
     try m.set(3, 3, 99.0);
     try m.set(2, 2, 7.75);
 
-    try t.expectApproxEqAbs(1.0, try m.get(1, 1), 1e-12);
-    try t.expectApproxEqAbs(2.0, try m.get(1, 2), 1e-12);
-    try t.expectApproxEqAbs(99.0, try m.get(3, 3), 1e-12);
-    try t.expectApproxEqAbs(7.75, try m.get(2, 2), 1e-12);
+    try t.expectEqual(1.0, try m.get(1, 1));
+    try t.expectEqual(2.0, try m.get(1, 2));
+    try t.expectEqual(99.0, try m.get(3, 3));
+    try t.expectEqual(7.75, try m.get(2, 2));
 }
 
 test format {
