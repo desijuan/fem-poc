@@ -2,7 +2,7 @@ const std = @import("std");
 const utils = @import("utils.zig");
 const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
-const Mesh = @import("Mesh.zig");
+const Mesh = @import("mesh/Mesh.zig");
 
 pub fn main() !void {
     var gpa_instance = std.heap.DebugAllocator(.{ .safety = true }){};

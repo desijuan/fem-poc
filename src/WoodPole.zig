@@ -1,6 +1,8 @@
 const std = @import("std");
 const utils = @import("utils.zig");
-const Mesh = @import("Mesh.zig");
+const mesh = @import("mesh/mesh.zig");
+
+const Mesh = mesh.Mesh;
 
 const PI = std.math.pi;
 
@@ -14,9 +16,13 @@ density: f64,
 
 const Self = @This();
 
+pub const format = utils.structFormatFn(Self);
+
 pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
-    var mat_props: []Mesh.MaterialProperties = try allocator.alloc(Mesh.MaterialProperties, 1);
-    mat_props[0] = Mesh.MaterialProperties{
+    const mat_props: []mesh.MaterialProperties = try allocator.alloc(mesh.MaterialProperties, 1);
+    errdefer allocator.free(mat_props);
+
+    mat_props[0] = mesh.MaterialProperties{
         .elasticity_modulus = self.modulus_of_elasticity,
         .shear_modulus = self.shear_modulus,
         .density = self.density,
@@ -25,25 +31,28 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
     const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / Mesh.desired_element_size)));
     const beam_size: f64 = self.height / @as(f64, @floatFromInt(n_beams));
 
-    var nodes: []Mesh.Vec3 = try allocator.alloc(Mesh.Vec3, n_beams + 1);
+    const nodes: []mesh.Vec3 = try allocator.alloc(mesh.Vec3, n_beams + 1);
+    errdefer allocator.free(nodes);
+
     for (0..n_beams) |i| {
-        nodes[i] = Mesh.Vec3{
+        nodes[i] = mesh.Vec3{
             .x = 0.0,
             .y = 0.0,
             .z = @as(f64, @floatFromInt(i)) * beam_size,
         };
         // TODO: TCXWoodPoleFem.fPoleNodesList[i] = i
 
-    } else {
-        // Last Node
-        nodes[n_beams] = Mesh.Vec3{
+    } else { // Last Node
+        nodes[n_beams] = mesh.Vec3{
             .x = 0.0,
             .y = 0.0,
             .z = self.height,
         };
     }
 
-    var beams: []Mesh.Beam = try allocator.alloc(Mesh.Beam, n_beams);
+    const beams: []mesh.Beam = try allocator.alloc(mesh.Beam, n_beams);
+    errdefer allocator.free(beams);
+
     for (0..n_beams) |i| {
         const diameter: f64 = utils.evalLine(
             (nodes[i].z + nodes[i + 1].z) / 2.0,
@@ -52,7 +61,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
 
         const moment: f64 = PI * (diameter * diameter * diameter * diameter) / 64.0;
 
-        beams[i] = Mesh.Beam{
+        beams[i] = mesh.Beam{
             .mat_props_idx = 0,
             .n0_idx = @intCast(i),
             .n1_idx = @intCast(i + 1),
@@ -64,8 +73,10 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
         };
     }
 
-    var bcs: []Mesh.BeamBC = try allocator.alloc(Mesh.BeamBC, 1);
-    bcs[0] = Mesh.BeamBC{
+    const bcs: []mesh.BeamBC = try allocator.alloc(mesh.BeamBC, 1);
+    errdefer allocator.free(bcs);
+
+    bcs[0] = mesh.BeamBC{
         .node_idx = 0,
         .beam_idx = 0,
         .type0 = .Support,
@@ -89,5 +100,3 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
         .bcs = bcs,
     };
 }
-
-pub const format = utils.structFormatFn(Self);
