@@ -65,6 +65,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
             .mat_props_idx = 0,
             .n0_idx = @intCast(i),
             .n1_idx = @intCast(i + 1),
+            .length = beam_size,
             .cross_area = PI * diameter * diameter / 4.0,
             .moment_x = moment,
             .moment_y = moment,

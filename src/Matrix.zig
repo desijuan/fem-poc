@@ -4,6 +4,8 @@ n_rows: u32,
 n_cols: u32,
 entries: []f64,
 
+pub const Error = error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds };
+
 const Self = @This();
 
 pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) !Self {
@@ -21,14 +23,18 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.entries);
 }
 
-pub fn get(self: Self, i: usize, j: usize) error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds }!f64 {
+pub fn reset(self: Self) void {
+    @memset(self.entries, 0);
+}
+
+pub fn get(self: Self, i: usize, j: usize) Error!f64 {
     if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
     if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
 
     return self.entries[(j - 1) * self.n_rows + i - 1];
 }
 
-pub fn set(self: Self, i: usize, j: usize, value: f64) error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds }!void {
+pub fn set(self: Self, i: usize, j: usize, value: f64) Error!void {
     if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
     if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
 
@@ -51,13 +57,20 @@ pub fn format(
     if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
 
     for (0..self.n_rows) |i| {
-        try std.fmt.format(out_stream, "{d:3}: [ {d:.2}", .{ i + 1, self.entries[i] });
-        for (1..self.n_cols) |j| try std.fmt.format(out_stream, ", {d:.2}", .{self.entries[j * self.n_rows + i]});
+        try std.fmt.format(out_stream, "{d:3}: [{e:7.2}", .{ i + 1, self.entries[i] });
+        for (1..self.n_cols) |j| try std.fmt.format(out_stream, " {e:7.2}", .{self.entries[j * self.n_rows + i]});
         try std.fmt.format(out_stream, " ]\n", .{});
     }
 }
 
 const t = std.testing;
+
+fn expectNotEqual(comptime T: type, expected: T, actual: T) !void {
+    if (actual == expected) {
+        std.debug.print("Values are equal: expected {}, found {}\n", .{ expected, actual });
+        return error.TestExpectedNotEqual;
+    }
+}
 
 test init {
     const ta = t.allocator;
@@ -66,6 +79,21 @@ test init {
     defer m.deinit(ta);
 
     for (0..9) |i| try t.expectEqual(0, m.entries[i]);
+}
+
+test reset {
+    const ta = t.allocator;
+
+    const m = try init(ta, 3, 3);
+    defer m.deinit(ta);
+
+    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+
+    for (m.entries) |entry| try expectNotEqual(f64, 0, entry);
+
+    m.reset();
+
+    for (m.entries) |entry| try t.expectEqual(0, entry);
 }
 
 test get {
@@ -122,12 +150,11 @@ test set {
 
 test format {
     const expected =
-        \\  1: [ 1.00, 2.00, 3.00 ]
-        \\  2: [ 4.00, 5.00, 6.00 ]
-        \\  3: [ 7.00, 8.00, 9.00 ]
+        \\  1: [ 1.00e0  2.00e0  3.00e0 ]
+        \\  2: [ 4.00e0  5.00e0  6.00e0 ]
+        \\  3: [ 7.00e0  8.00e0  9.00e0 ]
         \\
     ;
-
     const ta = t.allocator;
 
     const m = try init(ta, 3, 3);

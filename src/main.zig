@@ -25,11 +25,6 @@ pub fn main() !void {
     const mesh: Mesh = try pole.buildMesh(gpa);
     defer mesh.deinit(gpa);
 
-    for (mesh.mat_props) |props| std.debug.print("{}", .{props});
-    for (mesh.nodes) |node| std.debug.print("{}", .{node});
-    for (mesh.beams) |beam| std.debug.print("{}", .{beam});
-    for (mesh.bcs) |bc| std.debug.print("{}", .{bc});
-
     //
     // wip ...
     //
@@ -47,10 +42,6 @@ pub fn main() !void {
     };
     defer for ([3]Matrix{ m_stiffness, v_load, v_sol }) |m| m.deinit(gpa);
 
-    std.debug.print("{}", .{m_stiffness});
-    std.debug.print("{}", .{v_load});
-    std.debug.print("{}", .{v_sol});
-
     const m_ek, const v_ef = blk: {
         const n_eq: u32 = 12;
 
@@ -64,8 +55,9 @@ pub fn main() !void {
     };
     defer for ([2]Matrix{ m_ek, v_ef }) |m| m.deinit(gpa);
 
-    std.debug.print("{}", .{m_ek});
-    std.debug.print("{}", .{v_ef});
+    try mesh.calcLocalKforBeam(0, m_ek, v_ef);
+
+    std.debug.print("m_ek:\n{}", .{m_ek});
 }
 
 comptime {
