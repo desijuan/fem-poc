@@ -1,0 +1,20 @@
+name: CI
+on:
+  push:
+    branches: [ "master" ]  # Run only on master
+  pull_request:             # Optional: Also run on PRs targeting master
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Build and Test
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: 0.14.0
+      - name: Check formatting
+        run: zig fmt --ast-check .
+      - name: Build
+        run: zig build -Doptimize=ReleaseSafe --summary all
+      - name: Run tests
+        run: zig build test -Doptimize=ReleaseSafe --summary all
