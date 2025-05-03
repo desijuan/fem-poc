@@ -27,21 +27,21 @@ pub fn reset(self: Self) void {
     @memset(self.entries, 0);
 }
 
-pub fn get(self: Self, i: usize, j: usize) Error!f64 {
+pub fn get(self: Self, i: u32, j: u32) Error!f64 {
     if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
     if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
 
     return self.entries[(j - 1) * self.n_rows + i - 1];
 }
 
-pub fn set(self: Self, i: usize, j: usize, value: f64) Error!void {
+pub fn set(self: Self, i: u32, j: u32, value: f64) Error!void {
     if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
     if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
 
     self.entries[(j - 1) * self.n_rows + i - 1] = value;
 }
 
-pub fn addTo(self: Self, i: usize, j: usize, value: f64) Error!void {
+pub fn addTo(self: Self, i: u32, j: u32, value: f64) Error!void {
     if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
     if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
 

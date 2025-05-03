@@ -79,7 +79,7 @@ pub fn main() !void {
                 const ieq: u32 = eq_idxs[i - 1];
                 for (1..7) |j| {
                     const jeq: u32 = eq_idxs[j - 1];
-                    try m_K.addTo(ieq, jeq, try m_ek.get(i, j));
+                    try m_K.addTo(ieq, jeq, try m_ek.get(@intCast(i), @intCast(j)));
                 }
             }
         }
@@ -91,4 +91,5 @@ pub fn main() !void {
 comptime {
     _ = @import("utils.zig");
     _ = @import("Matrix.zig");
+    _ = @import("mesh/Beam.zig");
 }
