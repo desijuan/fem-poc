@@ -34,7 +34,7 @@ pub const BeamData = struct {
     L: f64, // Length
 };
 
-///  fn calcLocakK(BeamData, Matrix) Matrix.Error!void
+///  fn calcLocakK(BeamData, Matrix) error{WrongSize}!void
 ///
 ///  Calculates the Local Stiffness Matrix for a Beam element.
 ///
@@ -159,12 +159,11 @@ test calcLocalK {
         .L = 1.0,
     }, ek);
 
-    var value: f64 = 0.0;
     for (1..Mesh.NEQ + 1) |ui| for (1..Mesh.NEQ + 1) |uj| {
         const i: u32 = @intCast(ui);
         const j: u32 = @intCast(uj);
 
-        value = switch ((@as(u64, i) << 32) | @as(u64, j)) {
+        const value: f64 = switch ((@as(u64, i) << 32) | @as(u64, j)) {
             pair(1, 1) => 1.0,
             pair(7, 1) => -1.0,
 
