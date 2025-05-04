@@ -1,28 +1,11 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const utils = @import("utils.zig");
 const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
 const Mesh = @import("mesh/Mesh.zig");
 
-const Gpa = switch (@import("builtin").mode) {
-    .ReleaseSmall => struct {
-        pub inline fn allocator() std.mem.Allocator {
-            return std.heap.c_allocator;
-        }
-    },
-
-    else => struct {
-        var da_inst = std.heap.DebugAllocator(.{ .safety = true }){};
-
-        pub fn allocator() std.mem.Allocator {
-            return da_inst.allocator();
-        }
-
-        pub fn deinit() std.heap.Check {
-            return da_inst.deinit();
-        }
-    },
-};
+const Gpa = @import("allocator.zig").Gpa(builtin.mode);
 
 pub fn main() !void {
     defer if (comptime @hasDecl(Gpa, "deinit"))
@@ -40,13 +23,16 @@ pub fn main() !void {
         .density = 5.4463e2,
     };
 
-    std.debug.print("{}", .{pole});
+    if (comptime builtin.mode == .Debug)
+        std.debug.print("{}", .{pole});
 
     const mesh: Mesh = try pole.buildMesh(gpa);
     defer mesh.deinit(gpa);
 
-    std.debug.print("{}", .{mesh.mat_props[0]});
-    std.debug.print("{}", .{mesh.beams[0]});
+    if (comptime builtin.mode == .Debug) {
+        std.debug.print("{}", .{mesh.mat_props[0]});
+        std.debug.print("{}", .{mesh.beams[0]});
+    }
 
     const m_K, const v_f, const v_v = blk: {
         const n_eqs: u32 = @intCast(mesh.nodes.len * 6);
@@ -87,11 +73,13 @@ pub fn main() !void {
 
             const beam_idx: u32 = @intCast(idx);
 
-            std.debug.print("beam_idx: {}\n", .{beam_idx});
+            if (comptime builtin.mode == .Debug)
+                std.debug.print("beam_idx: {}\n", .{beam_idx});
 
             try mesh.calcLocalKforBeam(beam_idx, m_ek, v_ef);
 
-            std.debug.print("m_ek:\n{}", .{m_ek});
+            if (comptime builtin.mode == .Debug)
+                std.debug.print("m_ek:\n{}", .{m_ek});
 
             //
             // TODO: Accumular (m_ek, v_ef) en (m_K, v_f).
@@ -101,7 +89,8 @@ pub fn main() !void {
 
             mesh.getEquationIndicesForBeam(beam_idx, &eq_idxs);
 
-            std.debug.print("eq_idxs: {any}\n", .{eq_idxs});
+            if (comptime builtin.mode == .Debug)
+                std.debug.print("eq_idxs: {any}\n", .{eq_idxs});
 
             for (1..7) |i| {
                 const ieq: u32 = eq_idxs[i - 1];
