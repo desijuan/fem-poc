@@ -1,9 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const utils = @import("utils.zig");
+const macros = @import("macros.zig");
 const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
 const Mesh = @import("mesh/Mesh.zig");
+
+const DPRINT = macros.DPRINT(builtin.mode);
 
 const Gpa = @import("allocator.zig").Gpa(builtin.mode);
 
@@ -23,16 +26,13 @@ pub fn main() !void {
         .density = 5.4463e2,
     };
 
-    if (comptime builtin.mode == .Debug)
-        std.debug.print("{}", .{pole});
+    DPRINT("{}", .{pole});
 
     const mesh: Mesh = try pole.buildMesh(gpa);
     defer mesh.deinit(gpa);
 
-    if (comptime builtin.mode == .Debug) {
-        std.debug.print("{}", .{mesh.mat_props[0]});
-        std.debug.print("{}", .{mesh.beams[0]});
-    }
+    DPRINT("{}", .{mesh.mat_props[0]});
+    DPRINT("{}", .{mesh.beams[0]});
 
     const m_K, const v_f, const v_v = blk: {
         const n_eqs: u32 = @intCast(mesh.nodes.len * 6);
@@ -73,13 +73,11 @@ pub fn main() !void {
 
             const beam_idx: u32 = @intCast(idx);
 
-            if (comptime builtin.mode == .Debug)
-                std.debug.print("beam_idx: {}\n", .{beam_idx});
+            DPRINT("beam_idx: {}\n", .{beam_idx});
 
             try mesh.calcLocalKforBeam(beam_idx, m_ek, v_ef);
 
-            if (comptime builtin.mode == .Debug)
-                std.debug.print("m_ek:\n{}", .{m_ek});
+            DPRINT("m_ek:\n{}", .{m_ek});
 
             //
             // TODO: Accumular (m_ek, v_ef) en (m_K, v_f).
@@ -89,8 +87,7 @@ pub fn main() !void {
 
             mesh.getEquationIndicesForBeam(beam_idx, &eq_idxs);
 
-            if (comptime builtin.mode == .Debug)
-                std.debug.print("eq_idxs: {any}\n", .{eq_idxs});
+            DPRINT("eq_idxs: {any}\n", .{eq_idxs});
 
             for (1..7) |i| {
                 const ieq: u32 = eq_idxs[i - 1];
