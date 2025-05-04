@@ -43,28 +43,25 @@ pub const BeamData = struct {
 ///
 ///  into:
 ///  ek =
-///  1  [ EA/L,   0,          0,          0,      0,         0,         -EA/L,  0,          0,          0,      0,         0        ]
-///  2  [ 0,      12EIz/L³,   0,          0,      0,         6EIz/L²,   0,      -12EIz/L³,  0,          0,      0,         6EIz/L²  ]
-///  3  [ 0,      0,          12EIy/L³,   0,      -6EIy/L²,  0,         0,      0,          -12EIy/L³,  0,      -6EIy/L²,  0        ]
-///  4  [ 0,      0,          0,          GJ/L,   0,         0,         0,      0,          0,          -GJ/L,  0,         0        ]
-///  5  [ 0,      0,          -6EIy/L²,   0,      4EIy/L,    0,         0,      0,          6EIy/L²,    0,      2EIy/L,    0        ]
-///  6  [ 0,      6EIz/L²,    0,          0,      0,         4EIz/L,    0,      -6EIz/L²,   0,          0,      0,         2EIz/L   ]
-///  7  [ -EA/L,  0,          0,          0,      0,         0,         EA/L,   0,          0,          0,      0,         0        ]
-///  8  [ 0,      -12EIz/L³,  0,          0,      0,         -6EIz/L²,  0,      12EIz/L³,   0,          0,      0,         -6EIz/L² ]
-///  9  [ 0,      0,          -12EIy/L³,  0,      6EIy/L²,   0,         0,      0,          12EIy/L³,   0,      6EIy/L²,   0        ]
+///   1 [ EA/L,   0,          0,          0,      0,         0,         -EA/L,  0,          0,          0,      0,         0        ]
+///   2 [ 0,      12EIz/L³,   0,          0,      0,         6EIz/L²,   0,      -12EIz/L³,  0,          0,      0,         6EIz/L²  ]
+///   3 [ 0,      0,          12EIy/L³,   0,      -6EIy/L²,  0,         0,      0,          -12EIy/L³,  0,      -6EIy/L²,  0        ]
+///   4 [ 0,      0,          0,          GJ/L,   0,         0,         0,      0,          0,          -GJ/L,  0,         0        ]
+///   5 [ 0,      0,          -6EIy/L²,   0,      4EIy/L,    0,         0,      0,          6EIy/L²,    0,      2EIy/L,    0        ]
+///   6 [ 0,      6EIz/L²,    0,          0,      0,         4EIz/L,    0,      -6EIz/L²,   0,          0,      0,         2EIz/L   ]
+///   7 [ -EA/L,  0,          0,          0,      0,         0,         EA/L,   0,          0,          0,      0,         0        ]
+///   8 [ 0,      -12EIz/L³,  0,          0,      0,         -6EIz/L²,  0,      12EIz/L³,   0,          0,      0,         -6EIz/L² ]
+///   9 [ 0,      0,          -12EIy/L³,  0,      6EIy/L²,   0,         0,      0,          12EIy/L³,   0,      6EIy/L²,   0        ]
 ///  10 [ 0,      0,          0,          -GJ/L,  0,         0,         0,      0,          0,          GJ/L,   0,         0        ]
 ///  11 [ 0,      0,          -6EIy/L²,   0,      2EIy/L,    0,         0,      0,          6EIy/L²,    0,      4EIy/L,    0        ]
 ///  12 [ 0,      6EIz/L²,    0,          0,      0,         2EIz/L,    0,      -6EIz/L²,   0,          0,      0,         4EIz/L   ]
-///       1       2           3           4       5          6          7       8           9           10      11         12
+///       1       2           3           4       5          6          7       8           9          10      11         12
 ///
 ///  Writes the results into the Matrix ek. Clears ek.
 ///  Returns error.WrongSize if ek is not 12x12.
 ///
-pub fn calcLocalK(
-    bd: BeamData,
-    ek: Matrix,
-) error{WrongSize}!void {
-    if (ek.n_rows != Mesh.NEQ or ek.n_cols != Mesh.NEQ) return error.WrongSize;
+pub fn calcLocalK(bd: BeamData, ek: Matrix) error{WrongSize}!void {
+    if (ek.n_rows != Mesh.DOFS or ek.n_cols != Mesh.DOFS) return error.WrongSize;
 
     ek.reset();
 
@@ -159,7 +156,7 @@ test calcLocalK {
         .L = 7.0,
     }, ek);
 
-    for (1..Mesh.NEQ + 1) |ui| for (1..Mesh.NEQ + 1) |uj| {
+    for (1..Mesh.DOFS + 1) |ui| for (1..Mesh.DOFS + 1) |uj| {
         const i: u32 = @intCast(ui);
         const j: u32 = @intCast(uj);
 
