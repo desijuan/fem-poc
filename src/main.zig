@@ -6,7 +6,7 @@ const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
 const Mesh = @import("mesh/Mesh.zig");
 
-const DPRINT = macros.DPRINT(builtin.mode);
+const DPRINT = macros.DPRINT;
 
 const Gpa = @import("allocator.zig").Gpa(builtin.mode);
 
