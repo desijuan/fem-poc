@@ -1,4 +1,5 @@
 const std = @import("std");
+const utils = @import("../utils.zig");
 const Matrix = @import("../Matrix.zig");
 const Mesh = @import("Mesh.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
@@ -18,13 +19,6 @@ fIp: f64, // ?
 const Self = @This();
 
 pub const format = @import("../utils.zig").structFormatFn(Self);
-
-pub fn getEquationIndices(self: Self, eq_idxs: *[12]u32) void {
-    for (1..7) |k| {
-        eq_idxs[k - 1] = 6 * self.n0_idx + @as(u32, @intCast(k));
-        eq_idxs[k - 1 + 6] = 6 * self.n1_idx + @as(u32, @intCast(k));
-    }
-}
 
 pub const BeamData = struct {
     E: f64, // Young's Modulus
@@ -138,6 +132,13 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
     }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
 }
 
+pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {
+    for ( // (n0, n0), (n0, n1), (n1, n0), (n1, n1)
+        [4]u32{ n0_idx * 6, n0_idx * 6, n1_idx * 6, n1_idx * 6 },
+        [4]u32{ n0_idx * 6, n1_idx * 6, n0_idx * 6, n1_idx * 6 },
+    ) |is, js| for (utils.range(u32, 1, 7)) |i| for (utils.range(u32, 1, 7)) |j| gK.addTo(i + is, j + js, eK.get(i, j));
+}
+
 const t = std.testing;
 
 inline fn pair(i: comptime_int, j: comptime_int) u64 {
@@ -222,4 +223,26 @@ test calcLocalK {
 
         try t.expectEqual(value, ek.get(i, j));
     };
+}
+
+test accumLocalK {
+    const ta = t.allocator;
+
+    const gK = try Matrix.init(ta, 18, 18);
+    defer gK.deinit(ta);
+
+    const eK = try Matrix.init(ta, 12, 12);
+    defer eK.deinit(ta);
+
+    @memset(eK.entries, 2);
+    accumLocalK(0, 1, eK, gK);
+
+    @memset(eK.entries, 3);
+    accumLocalK(1, 2, eK, gK);
+
+    try t.expectEqual(2, gK.get(1, 1));
+    try t.expectEqual(5, gK.get(9, 9));
+    try t.expectEqual(3, gK.get(18, 18));
+    try t.expectEqual(0, gK.get(1, 18));
+    try t.expectEqual(0, gK.get(18, 1));
 }

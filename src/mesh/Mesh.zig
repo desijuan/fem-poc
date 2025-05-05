@@ -1,5 +1,6 @@
 const std = @import("std");
 const utils = @import("../utils.zig");
+const DPRINT = @import("../macros.zig").DPRINT;
 
 const Matrix = @import("../Matrix.zig");
 
@@ -29,14 +30,13 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.bcs);
 }
 
-pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) void {
+pub fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void {
     if (comptime DEBUG)
-        if (ek.n_rows != DOFS or ek.n_cols != DOFS or ef.n_rows != DOFS or ef.n_cols != 1) std.debug.panic(
+        if (eK.n_rows != DOFS or eK.n_cols != DOFS or ef.n_rows != DOFS or ef.n_cols != 1) std.debug.panic(
             "Wrong size.\nek.n_rows: {}, ek.n_cols: {},\nef.n_rows: {}, ef.n_cols {}",
-            .{ ek.n_rows, ek.n_cols, ef.n_rows, ef.n_cols },
+            .{ eK.n_rows, eK.n_cols, ef.n_rows, ef.n_cols },
         );
-
-    const beam: Beam = self.beams[idx];
+    DPRINT("{}", .{beam});
 
     const mat_props: MaterialProperties = self.mat_props[beam.mat_props_idx];
 
@@ -50,9 +50,7 @@ pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) void {
         .L = beam.length,
     };
 
-    Beam.calcLocalK(beamData, ek);
-}
-
-pub fn getEquationIndicesForBeam(self: Self, idx: u32, eq_idxs: *[12]u32) void {
-    self.beams[idx].getEquationIndices(eq_idxs);
+    Beam.calcLocalK(beamData, eK);
+    DPRINT("eK =\n{}", .{eK});
+    Beam.accumLocalK(beam.n0_idx, beam.n1_idx, eK, gK);
 }
