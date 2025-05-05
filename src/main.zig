@@ -1,5 +1,4 @@
 const std = @import("std");
-const builtin = @import("builtin");
 const utils = @import("utils.zig");
 const macros = @import("macros.zig");
 const WoodPole = @import("WoodPole.zig");
@@ -8,7 +7,7 @@ const Mesh = @import("mesh/Mesh.zig");
 
 const DPRINT = macros.DPRINT;
 
-const Gpa = @import("allocator.zig").Gpa(builtin.mode);
+const Gpa = @import("allocator.zig").Gpa;
 
 pub fn main() error{OutOfMemory}!void {
     defer if (comptime @hasDecl(Gpa, "deinit"))
