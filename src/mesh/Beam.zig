@@ -3,6 +3,8 @@ const Matrix = @import("../Matrix.zig");
 const Mesh = @import("Mesh.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
 
+const DEBUG = @import("../config.zig").DEBUG;
+
 mat_props_idx: u32,
 n0_idx: u32,
 n1_idx: u32,
@@ -34,7 +36,7 @@ pub const BeamData = struct {
     L: f64, // Length
 };
 
-///  fn calcLocakK(BeamData, Matrix) error{WrongSize}!void
+///  fn calcLocakK(BeamData, Matrix) void
 ///
 ///  Calculates the Local Stiffness Matrix for a Beam element.
 ///
@@ -58,10 +60,14 @@ pub const BeamData = struct {
 ///       1       2           3           4       5          6          7       8           9          10      11         12
 ///
 ///  Writes the results into the Matrix ek. Clears ek.
-///  Returns error.WrongSize if ek is not 12x12.
+///  Panics if ek is not 12x12.
 ///
-pub fn calcLocalK(bd: BeamData, ek: Matrix) error{WrongSize}!void {
-    if (ek.n_rows != Mesh.DOFS or ek.n_cols != Mesh.DOFS) return error.WrongSize;
+pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
+    if (comptime DEBUG)
+        if (ek.n_rows != Mesh.DOFS or ek.n_cols != Mesh.DOFS) std.debug.panic(
+            "Wrong size.\nek.n_rows: {}, ek.n_cols: {}",
+            .{ ek.n_rows, ek.n_cols },
+        );
 
     ek.reset();
 
@@ -129,9 +135,7 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) error{WrongSize}!void {
         .{ .idx = .{ 6, 12 }, .val = 2 * bd.E * bd.Iz / bd.L },
         .{ .idx = .{ 8, 12 }, .val = -6 * bd.E * bd.Iz / (bd.L * bd.L) },
         .{ .idx = .{ 12, 12 }, .val = 4 * bd.E * bd.Iz / bd.L },
-    }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val) catch |err| switch (err) {
-        error.RowIndexOutOfBounds, error.ColumnIndexOutOfBounds => unreachable,
-    };
+    }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
 }
 
 const t = std.testing;
@@ -146,7 +150,7 @@ test calcLocalK {
     const ek = try Matrix.init(ta, 12, 12);
     defer ek.deinit(ta);
 
-    try calcLocalK(BeamData{
+    calcLocalK(BeamData{
         .E = 2.0,
         .G = 5.0,
         .A = 3.0,
@@ -216,6 +220,6 @@ test calcLocalK {
             else => 0.0,
         };
 
-        try t.expectEqual(value, try ek.get(i, j));
+        try t.expectEqual(value, ek.get(i, j));
     };
 }

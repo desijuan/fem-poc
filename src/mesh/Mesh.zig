@@ -8,6 +8,8 @@ const Vec3 = @import("Vec3.zig");
 const Beam = @import("Beam.zig");
 const BeamBC = @import("BeamBC.zig");
 
+const DEBUG = @import("../config.zig").DEBUG;
+
 pub const DOFS = 12;
 
 pub const desired_element_size = 0.5;
@@ -27,8 +29,12 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.bcs);
 }
 
-pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) error{WrongSize}!void {
-    if (ek.n_rows != DOFS or ek.n_cols != DOFS or ef.n_rows != DOFS) return error.WrongSize;
+pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) void {
+    if (comptime DEBUG)
+        if (ek.n_rows != DOFS or ek.n_cols != DOFS or ef.n_rows != DOFS or ef.n_cols != 1) std.debug.panic(
+            "Wrong size.\nek.n_rows: {}, ek.n_cols: {},\nef.n_rows: {}, ef.n_cols {}",
+            .{ ek.n_rows, ek.n_cols, ef.n_rows, ef.n_cols },
+        );
 
     const beam: Beam = self.beams[idx];
 
@@ -44,9 +50,7 @@ pub fn calcLocalKforBeam(self: Self, idx: u32, ek: Matrix, ef: Matrix) error{Wro
         .L = beam.length,
     };
 
-    Beam.calcLocalK(beamData, ek) catch |err| switch (err) {
-        error.WrongSize => unreachable,
-    };
+    Beam.calcLocalK(beamData, ek);
 }
 
 pub fn getEquationIndicesForBeam(self: Self, idx: u32, eq_idxs: *[12]u32) void {

@@ -8,7 +8,7 @@ const Self = @This();
 
 pub const Error = error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds };
 
-pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) !Self {
+pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) error{OutOfMemory}!Self {
     const entries = try allocator.alloc(f64, n_rows * n_cols);
     @memset(entries, 0);
 
@@ -27,30 +27,19 @@ pub fn reset(self: Self) void {
     @memset(self.entries, 0);
 }
 
-pub fn get(self: Self, i: u32, j: u32) Error!f64 {
-    if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
-    if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
-
+pub fn get(self: Self, i: u32, j: u32) f64 {
     return self.entries[(j - 1) * self.n_rows + i - 1];
 }
 
-pub fn set(self: Self, i: u32, j: u32, value: f64) Error!void {
-    if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
-    if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
-
+pub fn set(self: Self, i: u32, j: u32, value: f64) void {
     self.entries[(j - 1) * self.n_rows + i - 1] = value;
 }
 
-pub fn addTo(self: Self, i: u32, j: u32, value: f64) Error!void {
-    if (i < 1 or i > self.n_rows) return error.RowIndexOutOfBounds;
-    if (j < 1 or j > self.n_cols) return error.ColumnIndexOutOfBounds;
-
+pub fn addTo(self: Self, i: u32, j: u32, value: f64) void {
     self.entries[(j - 1) * self.n_rows + i - 1] += value;
 }
 
-pub fn setEntries(self: Self, entries: []const f64) error{WrongSize}!void {
-    if (self.entries.len != entries.len) return error.WrongSize;
-
+pub fn setEntries(self: Self, entries: []const f64) void {
     for (0..self.entries.len) |i| self.entries[i] = entries[i];
 }
 
@@ -93,7 +82,7 @@ test reset {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
     for (m.entries) |entry| try expectNotEqual(f64, 0, entry);
 
@@ -108,24 +97,19 @@ test get {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    try t.expectError(error.RowIndexOutOfBounds, m.get(0, 1));
-    try t.expectError(error.RowIndexOutOfBounds, m.get(4, 1));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.get(1, 0));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.get(1, 4));
-
     // [ 1, 2, 3 ]
     // [ 4, 5, 6 ]
     // [ 7, 8, 9 ]
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
-    try t.expectEqual(1.0, try m.get(1, 1));
-    try t.expectEqual(2.0, try m.get(1, 2));
-    try t.expectEqual(3.0, try m.get(1, 3));
-    try t.expectEqual(4.0, try m.get(2, 1));
-    try t.expectEqual(7.0, try m.get(3, 1));
-    try t.expectEqual(9.0, try m.get(3, 3));
-    try t.expectEqual(5.0, try m.get(2, 2));
+    try t.expectEqual(1.0, m.get(1, 1));
+    try t.expectEqual(2.0, m.get(1, 2));
+    try t.expectEqual(3.0, m.get(1, 3));
+    try t.expectEqual(4.0, m.get(2, 1));
+    try t.expectEqual(7.0, m.get(3, 1));
+    try t.expectEqual(9.0, m.get(3, 3));
+    try t.expectEqual(5.0, m.get(2, 2));
 }
 
 test set {
@@ -134,24 +118,19 @@ test set {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    try t.expectError(error.RowIndexOutOfBounds, m.set(0, 1, 1.0));
-    try t.expectError(error.RowIndexOutOfBounds, m.set(4, 1, 1.0));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 0, 1.0));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 4, 1.0));
-
     // [ 1, 2, 3 ]
     // [ 4, 5, 6 ]
     // [ 7, 8, 9 ]
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
-    try m.set(3, 3, 99.0);
-    try m.set(2, 2, 7.75);
+    m.set(3, 3, 99.0);
+    m.set(2, 2, 7.75);
 
-    try t.expectEqual(1.0, try m.get(1, 1));
-    try t.expectEqual(2.0, try m.get(1, 2));
-    try t.expectEqual(99.0, try m.get(3, 3));
-    try t.expectEqual(7.75, try m.get(2, 2));
+    try t.expectEqual(1.0, m.get(1, 1));
+    try t.expectEqual(2.0, m.get(1, 2));
+    try t.expectEqual(99.0, m.get(3, 3));
+    try t.expectEqual(7.75, m.get(2, 2));
 }
 
 test addTo {
@@ -160,24 +139,19 @@ test addTo {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    try t.expectError(error.RowIndexOutOfBounds, m.set(0, 1, 1.0));
-    try t.expectError(error.RowIndexOutOfBounds, m.set(4, 1, 1.0));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 0, 1.0));
-    try t.expectError(error.ColumnIndexOutOfBounds, m.set(1, 4, 1.0));
-
     // [ 1, 2, 3 ]
     // [ 4, 5, 6 ]
     // [ 7, 8, 9 ]
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
-    try m.addTo(1, 1, 99.0);
-    try m.addTo(2, 2, 7.75);
+    m.addTo(1, 1, 99.0);
+    m.addTo(2, 2, 7.75);
 
-    try t.expectEqual(100.0, try m.get(1, 1));
-    try t.expectEqual(2.0, try m.get(1, 2));
-    try t.expectEqual(9.0, try m.get(3, 3));
-    try t.expectEqual(12.75, try m.get(2, 2));
+    try t.expectEqual(100.0, m.get(1, 1));
+    try t.expectEqual(2.0, m.get(1, 2));
+    try t.expectEqual(9.0, m.get(3, 3));
+    try t.expectEqual(12.75, m.get(2, 2));
 }
 
 test format {
@@ -192,7 +166,7 @@ test format {
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    try m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
     var line_buffer: [expected.len]u8 = undefined;
     var fbs: std.io.FixedBufferStream([]u8) = std.io.fixedBufferStream(&line_buffer);

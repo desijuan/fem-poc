@@ -16,6 +16,14 @@ jobs:
       - name: Check formatting
         run: zig fmt --ast-check .
       - name: Build
-        run: zig build -Doptimize=ReleaseSafe --summary all
+        run: |
+          zig build -Doptimize=Debug --summary all
+          zig build -Doptimize=ReleaseSafe --summary all
+          zig build -Doptimize=ReleaseSmall --summary all
+          zig build -Doptimize=ReleaseFast --summary all
       - name: Run tests
-        run: zig build test -Doptimize=ReleaseSafe --summary all
+        run: |
+          zig build test -Doptimize=Debug --summary all
+          zig build test -Doptimize=ReleaseSafe --summary all
+          zig build test -Doptimize=ReleaseSmall --summary all
+          zig build test -Doptimize=ReleaseFast --summary all

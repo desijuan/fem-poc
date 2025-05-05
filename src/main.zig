@@ -75,7 +75,7 @@ pub fn main() !void {
 
             DPRINT("beam_idx: {}\n", .{beam_idx});
 
-            try mesh.calcLocalKforBeam(beam_idx, m_ek, v_ef);
+            mesh.calcLocalKforBeam(beam_idx, m_ek, v_ef);
 
             DPRINT("m_ek:\n{}", .{m_ek});
 
@@ -93,7 +93,7 @@ pub fn main() !void {
                 const ieq: u32 = eq_idxs[i - 1];
                 for (1..7) |j| {
                     const jeq: u32 = eq_idxs[j - 1];
-                    try m_K.addTo(ieq, jeq, try m_ek.get(@intCast(i), @intCast(j)));
+                    m_K.addTo(ieq, jeq, m_ek.get(@intCast(i), @intCast(j)));
                 }
             }
         }
