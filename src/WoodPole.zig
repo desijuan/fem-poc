@@ -18,7 +18,7 @@ const Self = @This();
 
 pub const format = utils.structFormatFn(Self);
 
-pub fn buildMesh(self: Self, allocator: std.mem.Allocator) !Mesh {
+pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Mesh {
     const mat_props: []mesh.MaterialProperties = try allocator.alloc(mesh.MaterialProperties, 1);
     errdefer allocator.free(mat_props);
 

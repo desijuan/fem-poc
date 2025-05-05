@@ -10,7 +10,7 @@ const DPRINT = macros.DPRINT;
 
 const Gpa = @import("allocator.zig").Gpa(builtin.mode);
 
-pub fn main() !void {
+pub fn main() error{OutOfMemory}!void {
     defer if (comptime @hasDecl(Gpa, "deinit"))
         std.debug.print("da_deinit: {}\n", .{Gpa.deinit()});
 
