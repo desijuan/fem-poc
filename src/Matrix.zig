@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const DEBUG = @import("config.zig").DEBUG;
+
 n_rows: u32,
 n_cols: u32,
 entries: []f64,
@@ -28,14 +30,17 @@ pub fn reset(self: Self) void {
 }
 
 pub fn get(self: Self, i: u32, j: u32) f64 {
+    if (comptime DEBUG) self.checkIndices(i, j);
     return self.entries[(j - 1) * self.n_rows + i - 1];
 }
 
 pub fn set(self: Self, i: u32, j: u32, value: f64) void {
+    if (comptime DEBUG) self.checkIndices(i, j);
     self.entries[(j - 1) * self.n_rows + i - 1] = value;
 }
 
 pub fn addTo(self: Self, i: u32, j: u32, value: f64) void {
+    if (comptime DEBUG) self.checkIndices(i, j);
     self.entries[(j - 1) * self.n_rows + i - 1] += value;
 }
 
@@ -56,6 +61,13 @@ pub fn format(
         for (1..self.n_cols) |j| try std.fmt.format(out_stream, " {e:7.2}", .{self.entries[j * self.n_rows + i]});
         try std.fmt.format(out_stream, " ]\n", .{});
     }
+}
+
+fn checkIndices(self: Self, i: u32, j: u32) void {
+    if (i < 1 or i > self.n_rows)
+        std.debug.panic("Row idx i = {} out of bounds [1, {}]", .{ i, self.n_rows });
+    if (j < 1 or j > self.n_cols)
+        std.debug.panic("Col idx j = {} out of bounds [1, {}]", .{ j, self.n_cols });
 }
 
 const t = std.testing;
