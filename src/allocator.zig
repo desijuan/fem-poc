@@ -1,11 +1,9 @@
 const std = @import("std");
 
-pub fn Gpa(optimizeMode: std.builtin.OptimizeMode) type {
-    return switch (optimizeMode) {
-        .ReleaseSmall, .ReleaseFast => c_allocator,
-        .Debug, .ReleaseSafe => DebugAllocator,
-    };
-}
+pub const Gpa = switch (@import("builtin").mode) {
+    .ReleaseSmall, .ReleaseFast => c_allocator,
+    .Debug, .ReleaseSafe => DebugAllocator,
+};
 
 const c_allocator = struct {
     pub inline fn allocator() std.mem.Allocator {
