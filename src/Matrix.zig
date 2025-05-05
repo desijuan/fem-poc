@@ -8,8 +8,6 @@ entries: []f64,
 
 const Self = @This();
 
-pub const Error = error{ RowIndexOutOfBounds, ColumnIndexOutOfBounds };
-
 pub fn init(allocator: std.mem.Allocator, n_rows: u32, n_cols: u32) error{OutOfMemory}!Self {
     const entries = try allocator.alloc(f64, n_rows * n_cols);
     @memset(entries, 0);
