@@ -54,9 +54,9 @@ pub fn main() error{OutOfMemory}!void {
     _ = gv;
     _ = gf;
 
-    for (mesh.beams) |beam| mesh.processBeam(beam, eK, ef, gK);
+    mesh.assembleGlobalK(eK, ef, gK);
 
-    DPRINT("m_K:\n{}", .{gK});
+    DPRINT("m_K =\n{}", .{gK});
 }
 
 comptime {

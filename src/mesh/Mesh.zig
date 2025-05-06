@@ -13,7 +13,7 @@ const DEBUG = @import("../config.zig").DEBUG;
 
 pub const DOFS = 12;
 
-pub const desired_element_size = 0.5;
+pub const desired_element_size = 6; // 0.5
 pub const gravity = Vec3{ .x = 0, .y = 0, .z = -9.8 };
 
 mat_props: []MaterialProperties,
@@ -30,13 +30,19 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.bcs);
 }
 
-pub fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void {
+pub fn assembleGlobalK(self: Self, eK: Matrix, ef: Matrix, gK: Matrix) void {
     if (comptime DEBUG)
         if (eK.n_rows != DOFS or eK.n_cols != DOFS or ef.n_rows != DOFS or ef.n_cols != 1) std.debug.panic(
             "Wrong size.\nek.n_rows: {}, ek.n_cols: {},\nef.n_rows: {}, ef.n_cols {}",
             .{ eK.n_rows, eK.n_cols, ef.n_rows, ef.n_cols },
         );
+
+    for (self.beams) |beam| self.processBeam(beam, eK, ef, gK);
+}
+
+fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void {
     DPRINT("{}", .{beam});
+    _ = ef;
 
     const mat_props: MaterialProperties = self.mat_props[beam.mat_props_idx];
 
