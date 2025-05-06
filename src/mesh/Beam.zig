@@ -134,9 +134,14 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
 
 pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {
     for ( // (n0, n0), (n0, n1), (n1, n0), (n1, n1)
-        [4]u32{ n0_idx * 6, n0_idx * 6, n1_idx * 6, n1_idx * 6 },
-        [4]u32{ n0_idx * 6, n1_idx * 6, n0_idx * 6, n1_idx * 6 },
-    ) |is, js| for (utils.range(u32, 1, 7)) |i| for (utils.range(u32, 1, 7)) |j| gK.addTo(i + is, j + js, eK.get(i, j));
+        [4]u32{ 0, 0, 6, 6 },
+        [4]u32{ 0, 6, 0, 6 },
+    ) |is, js| for (utils.range(u32, 1, 7)) |i| for (utils.range(u32, 1, 7)) |j|
+        gK.addTo(
+            i + (6 - is) * n0_idx + is * n1_idx,
+            j + (6 - js) * n0_idx + js * n1_idx,
+            eK.get(i + is, j + js),
+        );
 }
 
 const t = std.testing;
@@ -225,6 +230,8 @@ test calcLocalK {
     };
 }
 
+const DPRINT = @import("../macros.zig").DPRINT;
+
 test accumLocalK {
     const ta = t.allocator;
 
@@ -240,9 +247,12 @@ test accumLocalK {
     @memset(eK.entries, 3);
     accumLocalK(1, 2, eK, gK);
 
-    try t.expectEqual(2, gK.get(1, 1));
+    @memset(eK.entries, -1);
+    accumLocalK(0, 2, eK, gK);
+
+    try t.expectEqual(1, gK.get(1, 1));
     try t.expectEqual(5, gK.get(9, 9));
-    try t.expectEqual(3, gK.get(18, 18));
-    try t.expectEqual(0, gK.get(1, 18));
-    try t.expectEqual(0, gK.get(18, 1));
+    try t.expectEqual(2, gK.get(18, 18));
+    try t.expectEqual(-1, gK.get(1, 18));
+    try t.expectEqual(-1, gK.get(18, 1));
 }
