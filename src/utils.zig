@@ -6,6 +6,21 @@ pub inline fn evalLine(x: f64, r: R) f64 {
     return (x - r.x0) * (r.y1 - r.y0) / (r.x1 - r.x0) + r.y0;
 }
 
+pub inline fn range(comptime T: type, comptime start: comptime_int, comptime end: comptime_int) [end - start]T {
+    comptime {
+        if (start >= end) {
+            @compileError("start must be strictly less than end");
+        }
+
+        var array: [end - start]T = undefined;
+
+        for (0..array.len) |i|
+            array[i] = start + i;
+
+        return array;
+    }
+}
+
 pub fn structFormatFn(comptime T: type) fn (
     self: T,
     comptime fmt: []const u8,
@@ -46,4 +61,12 @@ test evalLine {
     try t.expectEqual(0.0, evalLine(0.0, r));
     try t.expectEqual(1.0, evalLine(0.5, r));
     try t.expectEqual(2.0, evalLine(1.0, r));
+}
+
+test range {
+    const v = range(u32, 11, 21);
+
+    try t.expectEqual(10, v.len);
+    try t.expectEqual(11, v[0]);
+    try t.expectEqual(20, v[9]);
 }
