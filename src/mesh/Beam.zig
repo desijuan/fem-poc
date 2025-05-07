@@ -3,6 +3,9 @@ const utils = @import("../utils.zig");
 const Matrix = @import("../Matrix.zig");
 const Mesh = @import("Mesh.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
+const mat3d = @import("../mat3d.zig");
+const Mat3x3 = mat3d.Mat3x3;
+const Quat = mat3d.Quat;
 
 const DEBUG = @import("../config.zig").DEBUG;
 
@@ -132,23 +135,34 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
     }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
 }
 
-pub fn rotate(eK: Matrix) void {
-    _ = eK;
+// #include <cblas.h>
+// void so3_action(const double* s_rot, const double* m, double* result) {
+//     // s_rot is 3x3 (SO3), m is 3x3, result = s_rot * m
+//     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+//                 3, 3, 3, 1.0, s_rot, 3, m, 3, 0.0, result, 3);
+// }
+//
+//
+//
 
+pub fn rotate(eK: Matrix) void {
     for (0..4) |r| for (0..4) |s| {
+        // copy the submatrix eK.sub(s, t) into sub3x3
+        // const sub3x3: Mat3x3 = eK.sub3x3(r, s);
+
+        // rotate sub3x3
+        // const sqrt2over2: f64 = std.math.sqrt(2.0) / 2;
+        // const q = Quat{ sqrt2over2, 0, -sqrt2over2, 0 };
+        // const sub3x3rot = mat3d.rotate(q, sub3x3);
+
+        // copy sub3x3rot back into eK.sub(s, t)
+        //
+        // _ = sub3x3rot;
+
         _ = r;
         _ = s;
-
-        // copy the submatrix eK.sub(s, t) into eKsub
-        //
-        //
-        // rotate eKsub
-        //
-        //
-        // copy eKsub back into eK.sub(s, t)
-        //
-
     };
+    _ = eK;
 }
 
 pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {
