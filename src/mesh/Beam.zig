@@ -132,6 +132,25 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
     }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
 }
 
+pub fn rotate(eK: Matrix) void {
+    _ = eK;
+
+    for (0..4) |r| for (0..4) |s| {
+        _ = r;
+        _ = s;
+
+        // copy the submatrix eK.sub(s, t) into eKsub
+        //
+        //
+        // rotate eKsub
+        //
+        //
+        // copy eKsub back into eK.sub(s, t)
+        //
+
+    };
+}
+
 pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {
     for ( // (n0, n0), (n0, n1), (n1, n0), (n1, n1)
         [4]u32{ 0, 0, 6, 6 },

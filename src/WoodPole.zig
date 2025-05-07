@@ -1,8 +1,11 @@
 const std = @import("std");
 const utils = @import("utils.zig");
-const mesh = @import("mesh/mesh.zig");
 
-const Mesh = mesh.Mesh;
+const Mesh = @import("mesh/Mesh.zig");
+const MaterialProperties = @import("mesh/MaterialProperties.zig");
+const Node = Mesh.Node;
+const Beam = @import("mesh/Beam.zig");
+const BeamBC = @import("mesh/BeamBC.zig");
 
 const PI = std.math.pi;
 
@@ -19,10 +22,10 @@ const Self = @This();
 pub const format = utils.structFormatFn(Self);
 
 pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Mesh {
-    const mat_props: []mesh.MaterialProperties = try allocator.alloc(mesh.MaterialProperties, 1);
+    const mat_props: []MaterialProperties = try allocator.alloc(MaterialProperties, 1);
     errdefer allocator.free(mat_props);
 
-    mat_props[0] = mesh.MaterialProperties{
+    mat_props[0] = MaterialProperties{
         .elasticity_modulus = self.modulus_of_elasticity,
         .shear_modulus = self.shear_modulus,
         .density = self.density,
@@ -31,37 +34,28 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Me
     const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / Mesh.desired_element_size)));
     const beam_size: f64 = self.height / @as(f64, @floatFromInt(n_beams));
 
-    const nodes: []mesh.Vec3 = try allocator.alloc(mesh.Vec3, n_beams + 1);
+    const nodes: []Node = try allocator.alloc(Node, n_beams + 1);
     errdefer allocator.free(nodes);
 
     for (0..n_beams) |i| {
-        nodes[i] = mesh.Vec3{
-            .x = 0.0,
-            .y = 0.0,
-            .z = @as(f64, @floatFromInt(i)) * beam_size,
-        };
+        nodes[i] = Node{ 0.0, 0.0, @as(f64, @floatFromInt(i)) * beam_size };
         // TODO: TCXWoodPoleFem.fPoleNodesList[i] = i
 
-    } else { // Last Node
-        nodes[n_beams] = mesh.Vec3{
-            .x = 0.0,
-            .y = 0.0,
-            .z = self.height,
-        };
-    }
+    } else // Last Node
+    nodes[n_beams] = Node{ 0.0, 0.0, self.height };
 
-    const beams: []mesh.Beam = try allocator.alloc(mesh.Beam, n_beams);
+    const beams: []Beam = try allocator.alloc(Beam, n_beams);
     errdefer allocator.free(beams);
 
     for (0..n_beams) |i| {
         const diameter: f64 = utils.evalLine(
-            (nodes[i].z + nodes[i + 1].z) / 2.0,
+            (nodes[i][2] + nodes[i + 1][2]) / 2.0,
             .{ .x0 = 0.0, .y0 = self.bottom_diameter, .x1 = self.height, .y1 = self.top_diameter },
         );
 
         const moment: f64 = PI * (diameter * diameter * diameter * diameter) / 64.0;
 
-        beams[i] = mesh.Beam{
+        beams[i] = Beam{
             .mat_props_idx = 0,
             .n0_idx = @intCast(i),
             .n1_idx = @intCast(i + 1),
@@ -74,10 +68,10 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Me
         };
     }
 
-    const bcs: []mesh.BeamBC = try allocator.alloc(mesh.BeamBC, 1);
+    const bcs: []BeamBC = try allocator.alloc(BeamBC, 1);
     errdefer allocator.free(bcs);
 
-    bcs[0] = mesh.BeamBC{
+    bcs[0] = BeamBC{
         .node_idx = 0,
         .beam_idx = 0,
         .type0 = .Support,

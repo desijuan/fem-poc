@@ -5,7 +5,7 @@ const DPRINT = @import("../macros.zig").DPRINT;
 const Matrix = @import("../Matrix.zig");
 
 const MaterialProperties = @import("MaterialProperties.zig");
-const Vec3 = @import("Vec3.zig");
+pub const Node = @import("../mat3d.zig").Vec3;
 const Beam = @import("Beam.zig");
 const BeamBC = @import("BeamBC.zig");
 
@@ -14,10 +14,10 @@ const DEBUG = @import("../config.zig").DEBUG;
 pub const DOFS = 12;
 
 pub const desired_element_size = 6; // 0.5
-pub const gravity = Vec3{ .x = 0, .y = 0, .z = -9.8 };
+pub const gravity = Node{ 0, 0, -9.8 };
 
 mat_props: []MaterialProperties,
-nodes: []Vec3,
+nodes: []Node,
 beams: []Beam,
 bcs: []BeamBC,
 
@@ -58,5 +58,7 @@ fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void 
 
     Beam.calcLocalK(beamData, eK);
     DPRINT("eK =\n{}", .{eK});
+    // ROTATE
+    // Beam.rotate(eK);
     Beam.accumLocalK(beam.n0_idx, beam.n1_idx, eK, gK);
 }
