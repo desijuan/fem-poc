@@ -17,7 +17,13 @@ pub fn cross(v: Vec3, w: Vec3) Vec3 {
     };
 }
 
-// pub fn multMv(m: Mat3x3, v: Vec3) Vec3 {}
+pub fn multMv(m: Mat3x3, v: Vec3) Vec3 {
+    return Vec3{
+        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
+        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2],
+        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2],
+    };
+}
 
 // pub fn multMM(m1: Mat3x3, m2: Mat3x3) Mat3x3 {}
 
@@ -44,7 +50,15 @@ test cross {
         try testing.expectEqual(expected, cross(v, w));
 }
 
-// test multMv {}
+test multMv {
+    const m = Mat3x3{
+        Vec3{ 1, 4, 7 },
+        Vec3{ 2, 5, 8 },
+        Vec3{ 3, 6, 9 },
+    };
+    const v = Vec3{ 10, 20, 30 };
+    try testing.expectEqual(Vec3{ 140, 320, 500 }, multMv(m, v));
+}
 
 // test multMM {}
 
