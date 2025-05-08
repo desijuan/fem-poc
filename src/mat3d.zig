@@ -25,7 +25,13 @@ pub fn multMv(m: Mat3x3, v: Vec3) Vec3 {
     };
 }
 
-// pub fn multMM(m1: Mat3x3, m2: Mat3x3) Mat3x3 {}
+pub fn multMM(m1: Mat3x3, m2: Mat3x3) Mat3x3 {
+    return Mat3x3{
+        multMv(m1, m2[0]),
+        multMv(m1, m2[1]),
+        multMv(m1, m2[2]),
+    };
+}
 
 pub fn tr(m: *Mat3x3) void {
     var tmp: f64 = undefined;
@@ -60,7 +66,25 @@ test multMv {
     try testing.expectEqual(Vec3{ 140, 320, 500 }, multMv(m, v));
 }
 
-// test multMM {}
+test multMM {
+    const m1 = Mat3x3{
+        Vec3{ 1, 4, 7 },
+        Vec3{ 2, 5, 8 },
+        Vec3{ 3, 6, 9 },
+    };
+
+    const m2 = Mat3x3{
+        Vec3{ 10, 13, 16 },
+        Vec3{ 11, 14, 17 },
+        Vec3{ 12, 15, 18 },
+    };
+
+    try testing.expectEqual(Mat3x3{
+        Vec3{ 84, 201, 318 },
+        Vec3{ 90, 216, 342 },
+        Vec3{ 96, 231, 366 },
+    }, multMM(m1, m2));
+}
 
 test tr {
     var m = Mat3x3{
