@@ -57,7 +57,6 @@ fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void 
     };
 
     Beam.calcLocalK(beamData, eK);
-    DPRINT("eK =\n{}", .{eK});
     Beam.rotate(eK);
     DPRINT("eK =\n{}", .{eK});
     Beam.accumLocalK(beam.n0_idx, beam.n1_idx, eK, gK);

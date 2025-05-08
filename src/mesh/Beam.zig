@@ -5,7 +5,6 @@ const Mesh = @import("Mesh.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
 const mat3d = @import("../mat3d.zig");
 const Mat3x3 = mat3d.Mat3x3;
-const Quat = mat3d.Quat;
 
 const DEBUG = @import("../config.zig").DEBUG;
 
@@ -137,10 +136,10 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
 
 pub fn rotate(eK: Matrix) void {
     for (utils.range(u2, 0, 4)) |r| for (utils.range(u2, 0, 4)) |s| {
-        // copy eK.sub(s, t) into sub3x3
+        // Copy eK.sub(s, t) into sub3x3
         var sub3x3: Mat3x3 = eK.sub3x3(r, s);
 
-        // conjugate sub3x3 by rot
+        // Conjugate sub3x3 by rot
         var rot = Mat3x3{
             .{ 0, 0, -1 },
             .{ 0, 1, 0 },
@@ -150,7 +149,7 @@ pub fn rotate(eK: Matrix) void {
         mat3d.tr(&rot);
         sub3x3 = mat3d.multMM(sub3x3, rot);
 
-        // copy sub3x3 back into eK.sub(s, t)
+        // Copy sub3x3 back into eK.sub(s, t)
         eK.copySub3x3(r, s, sub3x3);
     };
 }
@@ -253,7 +252,57 @@ test calcLocalK {
     };
 }
 
-const DPRINT = @import("../macros.zig").DPRINT;
+test rotate {
+    const ta = t.allocator;
+
+    const actual = try Matrix.init(ta, 12, 12);
+    defer actual.deinit(ta);
+
+    // Maxima
+    //
+    // m: genmatrix(lambda([i, j], (i-1)*12 + j), 12, 12);
+    //
+    for (utils.range(u8, 1, 13)) |i| for (utils.range(u8, 1, 13)) |j|
+        actual.set(i, j, @floatFromInt((i - 1) * 12 + j));
+
+    rotate(actual);
+
+    const expected = try Matrix.init(ta, 12, 12);
+    defer expected.deinit(ta);
+
+    // Maxima
+    //
+    // rot3: matrix([0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+    // rot: zeromatrix(12, 12);
+    // for k:0 thru 3 do (
+    //     for i:1 thru 3 do (
+    //         for j:1 thru 3 do (
+    //             rot[3*k + i, 3*k + j]: rot3[i, j]
+    //         )
+    //     )
+    // );
+    // expected: rot.m.transpose(rot);
+    // genmatrix(lambda([i, j], expected[remainder(i-1, 12) + 1, quotient(i-1, 12) + 1]), 144, 1);
+    //
+    // zig fmt: off
+    expected.setEntries(&[144]f64{
+         27,   15,   -3,   63,   51,  -39,    99,   87,  -75,   135,   123,  -111,
+         26,   14,   -2,   62,   50,  -38,    98,   86,  -74,   134,   122,  -110,
+        -25,  -13,    1,  -61,  -49,   37,   -97,  -85,   73,  -133,  -121,   109,
+         30,   18,   -6,   66,   54,  -42,   102,   90,  -78,   138,   126,  -114,
+         29,   17,   -5,   65,   53,  -41,   101,   89,  -77,   137,   125,  -113,
+        -28,  -16,    4,  -64,  -52,   40,  -100,  -88,   76,  -136,  -124,   112,
+         33,   21,   -9,   69,   57,  -45,   105,   93,  -81,   141,   129,  -117,
+         32,   20,   -8,   68,   56,  -44,   104,   92,  -80,   140,   128,  -116,
+        -31,  -19,    7,  -67,  -55,   43,  -103,  -91,   79,  -139,  -127,   115,
+         36,   24,  -12,   72,   60,  -48,   108,   96,  -84,   144,   132,  -120,
+         35,   23,  -11,   71,   59,  -47,   107,   95,  -83,   143,   131,  -119,
+        -34,  -22,   10,  -70,  -58,   46,  -106,  -94,   82,  -142,  -130,   118,
+    });
+    // zig fmt: on
+
+    try t.expectEqualSlices(f64, expected.entries, actual.entries);
+}
 
 test accumLocalK {
     const ta = t.allocator;
