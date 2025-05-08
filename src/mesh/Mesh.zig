@@ -30,19 +30,21 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.bcs);
 }
 
-pub fn assembleGlobalK(self: Self, eK: Matrix, ef: Matrix, gK: Matrix) void {
+pub fn assembleGlobalK(self: Self, gK: Matrix, eK: Matrix) void {
     if (comptime DEBUG)
-        if (eK.n_rows != DOFS or eK.n_cols != DOFS or ef.n_rows != DOFS or ef.n_cols != 1) std.debug.panic(
+        if (gK.n_rows != self.nodes.len * 6 or
+            gK.n_cols != self.nodes.len * 6 or
+            eK.n_rows != 2 * 6 or
+            eK.n_cols != 2 * 6) std.debug.panic(
             "Wrong size.\nek.n_rows: {}, ek.n_cols: {},\nef.n_rows: {}, ef.n_cols {}",
-            .{ eK.n_rows, eK.n_cols, ef.n_rows, ef.n_cols },
+            .{ eK.n_rows, eK.n_cols, gK.n_rows, gK.n_cols },
         );
 
-    for (self.beams) |beam| self.processBeam(beam, eK, ef, gK);
+    for (self.beams) |beam| self.processBeam(beam, gK, eK);
 }
 
-fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void {
+fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
     DPRINT("{}", .{beam});
-    _ = ef;
 
     const mat_props: MaterialProperties = self.mat_props[beam.mat_props_idx];
 
@@ -59,5 +61,5 @@ fn processBeam(self: Self, beam: Beam, eK: Matrix, ef: Matrix, gK: Matrix) void 
     Beam.calcLocalK(beamData, eK);
     Beam.rotate(eK);
     DPRINT("eK =\n{}", .{eK});
-    Beam.accumLocalK(beam.n0_idx, beam.n1_idx, eK, gK);
+    Beam.accumLocalK(beam.n0_idx, beam.n1_idx, gK, eK);
 }

@@ -33,7 +33,7 @@ pub fn multMM(m1: Mat3x3, m2: Mat3x3) Mat3x3 {
     };
 }
 
-pub fn tr(m: *Mat3x3) void {
+pub fn transposeM(m: *Mat3x3) void {
     var tmp: f64 = undefined;
     for (
         [3]u2{ 0, 0, 1 },
@@ -86,14 +86,14 @@ test multMM {
     }, multMM(m1, m2));
 }
 
-test tr {
+test transposeM {
     var m = Mat3x3{
         Vec3{ 1, 4, 7 },
         Vec3{ 2, 5, 8 },
         Vec3{ 3, 6, 9 },
     };
 
-    tr(&m);
+    transposeM(&m);
 
     try testing.expectEqual(Mat3x3{
         Vec3{ 1, 2, 3 },
