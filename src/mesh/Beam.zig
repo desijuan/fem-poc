@@ -3,6 +3,9 @@ const utils = @import("../utils.zig");
 const Matrix = @import("../Matrix.zig");
 const Mesh = @import("Mesh.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
+const mat3d = @import("../mat3d.zig");
+const Mat3x3 = mat3d.Mat3x3;
+const Quat = mat3d.Quat;
 
 const DEBUG = @import("../config.zig").DEBUG;
 
@@ -130,6 +133,26 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
         .{ .idx = .{ 8, 12 }, .val = -6 * bd.E * bd.Iz / (bd.L * bd.L) },
         .{ .idx = .{ 12, 12 }, .val = 4 * bd.E * bd.Iz / bd.L },
     }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
+}
+
+pub fn rotate(eK: Matrix) void {
+    for (utils.range(u2, 0, 4)) |r| for (utils.range(u2, 0, 4)) |s| {
+        // copy eK.sub(s, t) into sub3x3
+        var sub3x3: Mat3x3 = eK.sub3x3(r, s);
+
+        // conjugate sub3x3 by rot
+        var rot = Mat3x3{
+            .{ 0, 0, -1 },
+            .{ 0, 1, 0 },
+            .{ 1, 0, 0 },
+        };
+        sub3x3 = mat3d.multMM(rot, sub3x3);
+        mat3d.tr(&rot);
+        sub3x3 = mat3d.multMM(sub3x3, rot);
+
+        // copy sub3x3 back into eK.sub(s, t)
+        eK.copySub3x3(r, s, sub3x3);
+    };
 }
 
 pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {

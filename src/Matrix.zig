@@ -1,4 +1,7 @@
 const std = @import("std");
+const mat3d = @import("mat3d.zig");
+const Mat3x3 = mat3d.Mat3x3;
+const Vec3 = mat3d.Vec3;
 
 const DEBUG = @import("config.zig").DEBUG;
 
@@ -59,6 +62,20 @@ pub fn format(
         for (1..self.n_cols) |j| try std.fmt.format(out_stream, " {e:7.2}", .{self.entries[j * self.n_rows + i]});
         try std.fmt.format(out_stream, " ]\n", .{});
     }
+}
+
+pub fn sub3x3(self: Self, di: u32, dj: u32) Mat3x3 {
+    return Mat3x3{
+        self.entries[(3 * dj + 0) * self.n_cols + 3 * di ..][0..3].*,
+        self.entries[(3 * dj + 1) * self.n_cols + 3 * di ..][0..3].*,
+        self.entries[(3 * dj + 2) * self.n_cols + 3 * di ..][0..3].*,
+    };
+}
+
+pub fn copySub3x3(self: Self, di: u32, dj: u32, m: Mat3x3) void {
+    self.entries[(3 * dj + 0) * self.n_cols + 3 * di ..][0..3].* = m[0];
+    self.entries[(3 * dj + 1) * self.n_cols + 3 * di ..][0..3].* = m[1];
+    self.entries[(3 * dj + 2) * self.n_cols + 3 * di ..][0..3].* = m[2];
 }
 
 fn checkIndices(self: Self, i: u32, j: u32) void {
@@ -184,4 +201,21 @@ test format {
     try fbs.writer().print("{}", .{m});
 
     try t.expectEqualSlices(u8, expected, fbs.getWritten());
+}
+
+test sub3x3 {
+    const ta = t.allocator;
+
+    const m = try init(ta, 3, 3);
+    defer m.deinit(ta);
+
+    // [ 1, 2, 3 ]
+    // [ 4, 5, 6 ]
+    // [ 7, 8, 9 ]
+
+    m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
+
+    const m3x3 = m.sub3x3(0, 0);
+
+    for ([3]u32{ 1, 2, 3 }) |i| for ([3]u32{ 1, 2, 3 }) |j| try t.expectEqual(m.get(i, j), m3x3[j - 1][i - 1]);
 }
