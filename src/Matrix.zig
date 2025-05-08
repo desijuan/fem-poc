@@ -72,6 +72,12 @@ pub fn sub3x3(self: Self, di: u32, dj: u32) Mat3x3 {
     };
 }
 
+pub fn copySub3x3(self: Self, di: u32, dj: u32, m: Mat3x3) void {
+    self.entries[(3 * dj + 0) * self.n_cols + 3 * di ..][0..3].* = m[0];
+    self.entries[(3 * dj + 1) * self.n_cols + 3 * di ..][0..3].* = m[1];
+    self.entries[(3 * dj + 2) * self.n_cols + 3 * di ..][0..3].* = m[2];
+}
+
 fn checkIndices(self: Self, i: u32, j: u32) void {
     if (i < 1 or i > self.n_rows)
         std.debug.panic("Row idx i = {} out of bounds [1, {}]", .{ i, self.n_rows });
