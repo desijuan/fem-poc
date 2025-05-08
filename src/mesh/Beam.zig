@@ -134,19 +134,27 @@ pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
     }) |entry| ek.set(entry.idx[0], entry.idx[1], entry.val);
 }
 
+/// Rotation matrix
+///
+/// x -> z
+/// y -> y
+/// z -> -x
+///
+const rot90xz = Mat3x3{
+    .{ 0, 0, 1 },
+    .{ 0, 1, 0 },
+    .{ -1, 0, 0 },
+};
+
 pub fn rotate(eK: Matrix) void {
     for (utils.range(u2, 0, 4)) |r| for (utils.range(u2, 0, 4)) |s| {
         // Copy eK.sub(s, t) into sub3x3
         var sub3x3: Mat3x3 = eK.sub3x3(r, s);
 
         // Conjugate sub3x3 by rot
-        var rot = Mat3x3{
-            .{ 0, 0, -1 },
-            .{ 0, 1, 0 },
-            .{ 1, 0, 0 },
-        };
+        var rot = rot90xz;
         sub3x3 = mat3d.multMM(rot, sub3x3);
-        mat3d.tr(&rot);
+        mat3d.transposeM(&rot);
         sub3x3 = mat3d.multMM(sub3x3, rot);
 
         // Copy sub3x3 back into eK.sub(s, t)
@@ -154,7 +162,7 @@ pub fn rotate(eK: Matrix) void {
     };
 }
 
-pub fn accumLocalK(n0_idx: u32, n1_idx: u32, eK: Matrix, gK: Matrix) void {
+pub fn accumLocalK(n0_idx: u32, n1_idx: u32, gK: Matrix, eK: Matrix) void {
     for ( // (n0, n0), (n0, n1), (n1, n0), (n1, n1)
         [4]u32{ 0, 0, 6, 6 },
         [4]u32{ 0, 6, 0, 6 },
@@ -175,8 +183,8 @@ inline fn pair(i: comptime_int, j: comptime_int) u64 {
 test calcLocalK {
     const ta = t.allocator;
 
-    const ek = try Matrix.init(ta, 12, 12);
-    defer ek.deinit(ta);
+    const eK = try Matrix.init(ta, 12, 12);
+    defer eK.deinit(ta);
 
     calcLocalK(BeamData{
         .E = 2.0,
@@ -186,7 +194,7 @@ test calcLocalK {
         .Iz = 17.0,
         .J = 23.0,
         .L = 7.0,
-    }, ek);
+    }, eK);
 
     for (1..Mesh.DOFS + 1) |ui| for (1..Mesh.DOFS + 1) |uj| {
         const i: u32 = @intCast(ui);
@@ -248,7 +256,7 @@ test calcLocalK {
             else => 0.0,
         };
 
-        try t.expectEqual(value, ek.get(i, j));
+        try t.expectEqual(value, eK.get(i, j));
     };
 }
 
@@ -272,7 +280,7 @@ test rotate {
 
     // Maxima
     //
-    // rot3: matrix([0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+    // rot3: matrix([0, 0, -1], [0, 1, 0], [1, 0, 0]);
     // rot: zeromatrix(12, 12);
     // for k:0 thru 3 do (
     //     for i:1 thru 3 do (
@@ -286,18 +294,18 @@ test rotate {
     //
     // zig fmt: off
     expected.setEntries(&[144]f64{
-         27,   15,   -3,   63,   51,  -39,    99,   87,  -75,   135,   123,  -111,
-         26,   14,   -2,   62,   50,  -38,    98,   86,  -74,   134,   122,  -110,
-        -25,  -13,    1,  -61,  -49,   37,   -97,  -85,   73,  -133,  -121,   109,
-         30,   18,   -6,   66,   54,  -42,   102,   90,  -78,   138,   126,  -114,
-         29,   17,   -5,   65,   53,  -41,   101,   89,  -77,   137,   125,  -113,
-        -28,  -16,    4,  -64,  -52,   40,  -100,  -88,   76,  -136,  -124,   112,
-         33,   21,   -9,   69,   57,  -45,   105,   93,  -81,   141,   129,  -117,
-         32,   20,   -8,   68,   56,  -44,   104,   92,  -80,   140,   128,  -116,
-        -31,  -19,    7,  -67,  -55,   43,  -103,  -91,   79,  -139,  -127,   115,
-         36,   24,  -12,   72,   60,  -48,   108,   96,  -84,   144,   132,  -120,
-         35,   23,  -11,   71,   59,  -47,   107,   95,  -83,   143,   131,  -119,
-        -34,  -22,   10,  -70,  -58,   46,  -106,  -94,   82,  -142,  -130,   118,
+          27,  -15,   -3,   63,  -51,  -39,    99,  -87,  -75,   135,  -123,  -111,
+         -26,   14,    2,  -62,   50,   38,   -98,   86,   74,  -134,   122,   110,
+         -25,   13,    1,  -61,   49,   37,   -97,   85,   73,  -133,   121,   109,
+          30,  -18,   -6,   66,  -54,  -42,   102,  -90,  -78,   138,  -126,  -114,
+         -29,   17,    5,  -65,   53,   41,  -101,   89,   77,  -137,   125,   113,
+         -28,   16,    4,  -64,   52,   40,  -100,   88,   76,  -136,   124,   112,
+          33,  -21,   -9,   69,  -57,  -45,   105,  -93,  -81,   141,  -129,  -117,
+         -32,   20,    8,  -68,   56,   44,  -104,   92,   80,  -140,   128,   116,
+         -31,   19,    7,  -67,   55,   43,  -103,   91,   79,  -139,   127,   115,
+          36,  -24,  -12,   72,  -60,  -48,   108,  -96,  -84,   144,  -132,  -120,
+         -35,   23,   11,  -71,   59,   47,  -107,   95,   83,  -143,   131,   119,
+         -34,   22,   10,  -70,   58,   46,  -106,   94,   82,  -142,   130,   118,
     });
     // zig fmt: on
 
@@ -314,13 +322,13 @@ test accumLocalK {
     defer eK.deinit(ta);
 
     @memset(eK.entries, 2);
-    accumLocalK(0, 1, eK, gK);
+    accumLocalK(0, 1, gK, eK);
 
     @memset(eK.entries, 3);
-    accumLocalK(1, 2, eK, gK);
+    accumLocalK(1, 2, gK, eK);
 
     @memset(eK.entries, -1);
-    accumLocalK(0, 2, eK, gK);
+    accumLocalK(0, 2, gK, eK);
 
     try t.expectEqual(1, gK.get(1, 1));
     try t.expectEqual(5, gK.get(9, 9));

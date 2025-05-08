@@ -32,7 +32,7 @@ pub fn main() error{OutOfMemory}!void {
 
     DPRINT("{}", .{mesh.mat_props[0]});
 
-    const matrices: [5]Matrix = blk: {
+    const matrices: [4]Matrix = blk: {
         const n_eqs: u32 = @intCast(mesh.nodes.len * 6);
 
         const gK = try Matrix.init(gpa, n_eqs, n_eqs);
@@ -43,18 +43,16 @@ pub fn main() error{OutOfMemory}!void {
         errdefer gf.deinit(gpa);
         const eK = try Matrix.init(gpa, 2 * 6, 2 * 6);
         errdefer eK.deinit(gpa);
-        const ef = try Matrix.init(gpa, 2 * 6, 1);
-        errdefer ef.deinit(gpa);
 
-        break :blk [5]Matrix{ gK, gv, gf, eK, ef };
+        break :blk [4]Matrix{ gK, gv, gf, eK };
     };
     defer for (matrices) |m| m.deinit(gpa);
 
-    const gK, const gv, const gf, const eK, const ef = matrices;
+    const gK, const gv, const gf, const eK = matrices;
     _ = gv;
     _ = gf;
 
-    mesh.assembleGlobalK(eK, ef, gK);
+    mesh.assembleGlobalK(gK, eK);
 
     DPRINT("m_K =\n{}", .{gK});
 }
