@@ -3,6 +3,8 @@ const mat3d = @import("mat3d.zig");
 const Mat3x3 = mat3d.Mat3x3;
 const Vec3 = mat3d.Vec3;
 
+const c = @import("c.zig");
+
 const DEBUG = @import("config.zig").DEBUG;
 
 n_rows: u32,
@@ -26,6 +28,10 @@ pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.entries);
 }
 
+pub fn itemsC(self: Self) [*c]f64 {
+    return @ptrCast(self.entries.ptr);
+}
+
 pub fn reset(self: Self) void {
     @memset(self.entries, 0);
 }
@@ -46,7 +52,10 @@ pub fn addTo(self: Self, i: u32, j: u32, value: f64) void {
 }
 
 pub fn setEntries(self: Self, entries: []const f64) void {
-    for (0..self.entries.len) |i| self.entries[i] = entries[i];
+    if (comptime DEBUG) if (entries.len != self.entries.len)
+        std.debug.panic("entries = {} and self.entries = {} are different", .{ entries.len, self.entries.len });
+
+    @memcpy(self.entries, entries);
 }
 
 pub fn format(
@@ -65,17 +74,59 @@ pub fn format(
 }
 
 pub fn sub3x3(self: Self, di: u32, dj: u32) Mat3x3 {
+    const start = 3 * dj * self.n_cols + 3 * di;
+    const stride = self.n_cols;
+
     return Mat3x3{
-        self.entries[(3 * dj + 0) * self.n_cols + 3 * di ..][0..3].*,
-        self.entries[(3 * dj + 1) * self.n_cols + 3 * di ..][0..3].*,
-        self.entries[(3 * dj + 2) * self.n_cols + 3 * di ..][0..3].*,
+        @as(*const [3]f64, @ptrCast(&self.entries[start + 0 * stride])).*,
+        @as(*const [3]f64, @ptrCast(&self.entries[start + 1 * stride])).*,
+        @as(*const [3]f64, @ptrCast(&self.entries[start + 2 * stride])).*,
     };
 }
 
 pub fn copySub3x3(self: Self, di: u32, dj: u32, m: Mat3x3) void {
-    self.entries[(3 * dj + 0) * self.n_cols + 3 * di ..][0..3].* = m[0];
-    self.entries[(3 * dj + 1) * self.n_cols + 3 * di ..][0..3].* = m[1];
-    self.entries[(3 * dj + 2) * self.n_cols + 3 * di ..][0..3].* = m[2];
+    const start = 3 * dj * self.n_cols + 3 * di;
+    const stride = self.n_cols;
+
+    @as(*[3]f64, @ptrCast(&self.entries[start + 0 * stride])).* = m[0];
+    @as(*[3]f64, @ptrCast(&self.entries[start + 1 * stride])).* = m[1];
+    @as(*[3]f64, @ptrCast(&self.entries[start + 2 * stride])).* = m[2];
+}
+
+pub fn solveCholesky(m: Self, f: Self) error{LapackeError}!void {
+    if (comptime DEBUG) // Check sizes
+        if (m.n_cols != m.n_rows)
+            std.debug.panic("Matrix m is not square!\nm.n_rows = {}, m.n_cols{}", .{ m.n_rows, m.n_cols })
+        else if (f.n_rows != m.n_rows)
+            std.debug.panic("f.n_rows = {} != {}", .{ f.n_rows, m.n_rows })
+        else if (f.n_cols != 1)
+            std.debug.panic("f.n_cols = {} != 1", .{f.n_cols});
+
+    if (comptime DEBUG) // Check symmetry of m
+        for (2..@intCast(m.n_rows + 1)) |ui| {
+            const i: u32 = @intCast(ui);
+
+            for (1..i) |uj| {
+                const j: u32 = @intCast(uj);
+
+                if (m.get(i, j) != m.get(j, i))
+                    std.debug.panic("Asymmetry at ({}, {})\n", .{ i, j });
+            }
+        };
+
+    const N: i32 = @intCast(m.n_rows);
+
+    const info_decomp = c.LAPACKE_dpotrf(c.LAPACK_COL_MAJOR, 'L', N, m.itemsC(), N);
+    if (info_decomp != 0) {
+        std.debug.print("LAPACKE_dpotrf error  {}\n", .{info_decomp});
+        return error.LapackeError;
+    }
+
+    const info_solve = c.LAPACKE_dpotrs(c.LAPACK_COL_MAJOR, 'L', N, 1, m.itemsC(), N, f.itemsC(), N);
+    if (info_decomp != 0) {
+        std.debug.print("LAPACKE_dpotrs error {}\n", .{info_solve});
+        return error.LapackeError;
+    }
 }
 
 fn checkIndices(self: Self, i: u32, j: u32) void {
@@ -85,7 +136,7 @@ fn checkIndices(self: Self, i: u32, j: u32) void {
         std.debug.panic("Col idx j = {} out of bounds [1, {}]", .{ j, self.n_cols });
 }
 
-const t = std.testing;
+const testing = std.testing;
 
 fn expectNotEqual(comptime T: type, expected: T, actual: T) !void {
     if (actual == expected) {
@@ -95,16 +146,16 @@ fn expectNotEqual(comptime T: type, expected: T, actual: T) !void {
 }
 
 test init {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
 
-    for (0..9) |i| try t.expectEqual(0, m.entries[i]);
+    for (0..9) |i| try testing.expectEqual(0, m.entries[i]);
 }
 
 test reset {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -115,11 +166,11 @@ test reset {
 
     m.reset();
 
-    for (m.entries) |entry| try t.expectEqual(0, entry);
+    for (m.entries) |entry| try testing.expectEqual(0, entry);
 }
 
 test get {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -130,17 +181,17 @@ test get {
 
     m.setEntries(&.{ 1, 4, 7, 2, 5, 8, 3, 6, 9 });
 
-    try t.expectEqual(1.0, m.get(1, 1));
-    try t.expectEqual(2.0, m.get(1, 2));
-    try t.expectEqual(3.0, m.get(1, 3));
-    try t.expectEqual(4.0, m.get(2, 1));
-    try t.expectEqual(7.0, m.get(3, 1));
-    try t.expectEqual(9.0, m.get(3, 3));
-    try t.expectEqual(5.0, m.get(2, 2));
+    try testing.expectEqual(1.0, m.get(1, 1));
+    try testing.expectEqual(2.0, m.get(1, 2));
+    try testing.expectEqual(3.0, m.get(1, 3));
+    try testing.expectEqual(4.0, m.get(2, 1));
+    try testing.expectEqual(7.0, m.get(3, 1));
+    try testing.expectEqual(9.0, m.get(3, 3));
+    try testing.expectEqual(5.0, m.get(2, 2));
 }
 
 test set {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -154,14 +205,14 @@ test set {
     m.set(3, 3, 99.0);
     m.set(2, 2, 7.75);
 
-    try t.expectEqual(1.0, m.get(1, 1));
-    try t.expectEqual(2.0, m.get(1, 2));
-    try t.expectEqual(99.0, m.get(3, 3));
-    try t.expectEqual(7.75, m.get(2, 2));
+    try testing.expectEqual(1.0, m.get(1, 1));
+    try testing.expectEqual(2.0, m.get(1, 2));
+    try testing.expectEqual(99.0, m.get(3, 3));
+    try testing.expectEqual(7.75, m.get(2, 2));
 }
 
 test addTo {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -175,10 +226,10 @@ test addTo {
     m.addTo(1, 1, 99.0);
     m.addTo(2, 2, 7.75);
 
-    try t.expectEqual(100.0, m.get(1, 1));
-    try t.expectEqual(2.0, m.get(1, 2));
-    try t.expectEqual(9.0, m.get(3, 3));
-    try t.expectEqual(12.75, m.get(2, 2));
+    try testing.expectEqual(100.0, m.get(1, 1));
+    try testing.expectEqual(2.0, m.get(1, 2));
+    try testing.expectEqual(9.0, m.get(3, 3));
+    try testing.expectEqual(12.75, m.get(2, 2));
 }
 
 test format {
@@ -188,7 +239,7 @@ test format {
         \\  3: [ 7.00e0  8.00e0  9.00e0 ]
         \\
     ;
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -200,11 +251,11 @@ test format {
 
     try fbs.writer().print("{}", .{m});
 
-    try t.expectEqualSlices(u8, expected, fbs.getWritten());
+    try testing.expectEqualSlices(u8, expected, fbs.getWritten());
 }
 
 test sub3x3 {
-    const ta = t.allocator;
+    const ta = testing.allocator;
 
     const m = try init(ta, 3, 3);
     defer m.deinit(ta);
@@ -217,5 +268,43 @@ test sub3x3 {
 
     const m3x3 = m.sub3x3(0, 0);
 
-    for ([3]u32{ 1, 2, 3 }) |i| for ([3]u32{ 1, 2, 3 }) |j| try t.expectEqual(m.get(i, j), m3x3[j - 1][i - 1]);
+    for ([3]u32{ 1, 2, 3 }) |i| for ([3]u32{ 1, 2, 3 }) |j| try testing.expectEqual(m.get(i, j), m3x3[j - 1][i - 1]);
+}
+
+test "Cholesky 1x1" {
+    const ta = testing.allocator;
+
+    var m = try init(ta, 1, 1);
+    defer m.deinit(ta);
+    m.setEntries(&.{4.0}); // K = 4
+
+    var f = try init(testing.allocator, 1, 1);
+    defer f.deinit(ta);
+    f.setEntries(&.{4.0}); // f = 4
+
+    try solveCholesky(m, f);
+
+    try testing.expectEqual(1, f.entries[0]);
+}
+
+test "Cholesky 3x3" {
+    const ta = testing.allocator;
+
+    var m = try init(ta, 3, 3);
+    defer m.deinit(ta);
+
+    // [   4,  12, -16 ]
+    // [  12,  37, -43 ]
+    // [ -16, -43,  98 ]
+
+    m.setEntries(&.{ 4, 12, -16, 12, 37, -43, -16, -43, 98 });
+
+    var f = try init(ta, 3, 1);
+    defer f.deinit(ta);
+
+    f.setEntries(&.{ 0, 6, 39 });
+
+    try solveCholesky(m, f);
+
+    try testing.expectEqualSlices(f64, &.{ 1, 1, 1 }, f.entries);
 }

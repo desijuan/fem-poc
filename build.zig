@@ -8,11 +8,12 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
-        .link_libc = switch (optimize) {
-            .ReleaseSmall, .ReleaseFast => true,
-            .Debug, .ReleaseSafe => false,
-        },
+        .link_libc = true,
     });
+
+    exe_mod.addIncludePath(b.path("openblas"));
+    exe_mod.addLibraryPath(b.path("openblas"));
+    exe_mod.linkSystemLibrary("openblas_haswellp-r0.3.29", .{ .preferred_link_mode = .static });
 
     const exe = b.addExecutable(.{
         .name = "fem_poc",

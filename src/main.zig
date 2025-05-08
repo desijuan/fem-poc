@@ -1,6 +1,7 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 const macros = @import("macros.zig");
+const Matrices = @import("Matrices.zig");
 const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
 const Mesh = @import("mesh/Mesh.zig");
@@ -9,7 +10,7 @@ const DPRINT = macros.DPRINT;
 
 const Gpa = @import("allocator.zig").Gpa;
 
-pub fn main() error{OutOfMemory}!void {
+pub fn main() error{ OutOfMemory, LapackeError }!void {
     defer if (comptime @hasDecl(Gpa, "deinit"))
         std.debug.print("da_deinit: {}\n", .{Gpa.deinit()});
 
@@ -32,33 +33,19 @@ pub fn main() error{OutOfMemory}!void {
 
     DPRINT("{}", .{mesh.mat_props[0]});
 
-    const matrices: [4]Matrix = blk: {
-        const n_eqs: u32 = @intCast(mesh.nodes.len * 6);
+    const matrices = try Matrices.init(gpa, @intCast(mesh.nodes.len));
+    defer matrices.deinit(gpa);
 
-        const gK = try Matrix.init(gpa, n_eqs, n_eqs);
-        errdefer gK.deinit(gpa);
-        const gv = try Matrix.init(gpa, n_eqs, 1);
-        errdefer gv.deinit(gpa);
-        const gf = try Matrix.init(gpa, n_eqs, 1);
-        errdefer gf.deinit(gpa);
-        const eK = try Matrix.init(gpa, 2 * 6, 2 * 6);
-        errdefer eK.deinit(gpa);
+    mesh.assembleGlobalK(matrices.gK, matrices.eK);
+    DPRINT("gK =\n{}", .{matrices.gK});
 
-        break :blk [4]Matrix{ gK, gv, gf, eK };
-    };
-    defer for (matrices) |m| m.deinit(gpa);
-
-    const gK, const gv, const gf, const eK = matrices;
-    _ = gv;
-    _ = gf;
-
-    mesh.assembleGlobalK(gK, eK);
-
-    DPRINT("m_K =\n{}", .{gK});
+    // try Matrix.solveCholesky(matrices.gK, matrices.gf);
+    // DPRINT("gF =\n{}", .{matrices.gf});
 }
 
 comptime {
     _ = @import("utils.zig");
+    _ = @import("mat3d.zig");
     _ = @import("Matrix.zig");
     _ = @import("mesh/Beam.zig");
 }
