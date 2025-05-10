@@ -39,10 +39,17 @@ pub fn main() error{ OutOfMemory, LapackeError }!void {
     defer matrices.deinit(gpa);
 
     mesh.assembleGlobalK(matrices.gK, matrices.eK);
-    DPRINT("gK =\n{}", .{matrices.gK});
+    DPRINT("matrices.gK =\n{}", .{matrices.gK});
 
-    // try Matrix.solveCholesky(matrices.gK, matrices.gf);
-    // DPRINT("gF =\n{}", .{matrices.gf});
+    // TODO: Apply Boundary Conditions
+    mesh.applyBoundaryConds(matrices.gK);
+
+    // TODO: Add Forces
+    matrices.gf.set(matrices.gf.n_rows - 4, 1, 2e9);
+    DPRINT("gF =\n{}", .{matrices.gf});
+
+    try Matrix.solveCholesky(matrices.gK, matrices.gf);
+    DPRINT("gF =\n{}", .{matrices.gf});
 }
 
 comptime {

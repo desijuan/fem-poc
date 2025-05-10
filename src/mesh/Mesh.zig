@@ -38,6 +38,13 @@ pub fn assembleGlobalK(self: Self, gK: Matrix, eK: Matrix) void {
     for (self.beams) |beam| self.processBeam(beam, gK, eK);
 }
 
+pub fn applyBoundaryConds(_: Self, gK: Matrix) void {
+    // TODO: Hacer esto bien
+    for (1..7) |i| for (1..gK.n_rows + 1) |j| gK.set(@intCast(i), @intCast(j), 0);
+    for (1..7) |j| for (1..gK.n_cols + 1) |i| gK.set(@intCast(i), @intCast(j), 0);
+    for (1..gK.n_rows + 1) |i| gK.set(@intCast(i), @intCast(i), 1e12);
+}
+
 fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
     DPRINT("{}", .{beam});
 
