@@ -21,7 +21,7 @@ const Self = @This();
 
 pub const format = utils.structFormatFn(Self);
 
-pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Mesh {
+pub fn buildMesh(self: Self, allocator: std.mem.Allocator, elem_size: f64) error{OutOfMemory}!Mesh {
     const mat_props: []MaterialProperties = try allocator.alloc(MaterialProperties, 1);
     errdefer allocator.free(mat_props);
 
@@ -31,7 +31,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator) error{OutOfMemory}!Me
         .density = self.density,
     };
 
-    const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / Mesh.desired_element_size)));
+    const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / elem_size)));
     const beam_size: f64 = self.height / @as(f64, @floatFromInt(n_beams));
 
     const nodes: []Node = try allocator.alloc(Node, n_beams + 1);

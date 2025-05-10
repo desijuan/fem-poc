@@ -118,7 +118,7 @@ pub fn solveCholesky(m: Self, f: Self) error{LapackeError}!void {
 
     const info_decomp = c.LAPACKE_dpotrf(c.LAPACK_COL_MAJOR, 'L', N, m.itemsC(), N);
     if (info_decomp != 0) {
-        std.debug.print("LAPACKE_dpotrf error  {}\n", .{info_decomp});
+        std.debug.print("LAPACKE_dpotrf error {}\n", .{info_decomp});
         return error.LapackeError;
     }
 
