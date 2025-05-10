@@ -5,7 +5,7 @@ const Mesh = @import("mesh/Mesh.zig");
 const MaterialProperties = @import("mesh/MaterialProperties.zig");
 const Node = Mesh.Node;
 const Beam = @import("mesh/Beam.zig");
-const BeamBC = @import("mesh/BeamBC.zig");
+const BoundaryCondition = @import("mesh/BoundaryCondition.zig");
 
 const PI = std.math.pi;
 
@@ -68,24 +68,23 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator, elem_size: f64) error
         };
     }
 
-    const bcs: []BeamBC = try allocator.alloc(BeamBC, 1);
+    const bcs: []BoundaryCondition = try allocator.alloc(BoundaryCondition, 2);
     errdefer allocator.free(bcs);
 
-    bcs[0] = BeamBC{
+    // Support
+    // at ground level
+    bcs[0] = BoundaryCondition{
         .node_idx = 0,
-        .beam_idx = 0,
-        .type0 = .Support,
-        .type1 = .Support,
-        .type2 = .Support,
-        .type3 = .Support,
-        .type4 = .Support,
-        .type5 = .Support,
-        .value0 = 0.0,
-        .value1 = 0.0,
-        .value2 = 0.0,
-        .value3 = 0.0,
-        .value4 = 0.0,
-        .value5 = 0.0,
+        .type = .Support,
+    };
+
+    // Force
+    // 700 dN in the y direction
+    bcs[1] = BoundaryCondition{
+        .node_idx = beams[n_beams - 1].n1_idx,
+        .type = .{
+            .Force = .{ 0, 7e3, 0 },
+        },
     };
 
     return Mesh{
