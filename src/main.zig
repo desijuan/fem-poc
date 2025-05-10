@@ -8,6 +8,8 @@ const Mesh = @import("mesh/Mesh.zig");
 
 const DPRINT = macros.DPRINT;
 
+const elem_size = 6.0; // 0.5
+
 const Gpa = @import("allocator.zig").Gpa;
 
 pub fn main() error{ OutOfMemory, LapackeError }!void {
@@ -28,7 +30,7 @@ pub fn main() error{ OutOfMemory, LapackeError }!void {
 
     DPRINT("{}", .{pole});
 
-    const mesh: Mesh = try pole.buildMesh(gpa);
+    const mesh: Mesh = try pole.buildMesh(gpa, elem_size);
     defer mesh.deinit(gpa);
 
     DPRINT("{}", .{mesh.mat_props[0]});

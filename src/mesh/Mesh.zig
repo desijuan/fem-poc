@@ -11,9 +11,6 @@ const BeamBC = @import("BeamBC.zig");
 
 const DEBUG = @import("../config.zig").DEBUG;
 
-pub const desired_element_size = 6; // 0.5
-pub const gravity = Node{ 0, 0, -9.8 };
-
 mat_props: []MaterialProperties,
 nodes: []Node,
 beams: []Beam,
