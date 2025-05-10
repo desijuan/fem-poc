@@ -60,7 +60,7 @@ pub const BeamData = struct {
 ///
 pub fn calcLocalK(bd: BeamData, ek: Matrix) void {
     if (comptime DEBUG)
-        if (ek.n_rows != Mesh.DOFS or ek.n_cols != Mesh.DOFS) std.debug.panic(
+        if (ek.n_rows != 12 or ek.n_cols != 12) std.debug.panic(
             "Wrong size.\nek.n_rows: {}, ek.n_cols: {}",
             .{ ek.n_rows, ek.n_cols },
         );
@@ -196,7 +196,7 @@ test calcLocalK {
         .L = 7.0,
     }, eK);
 
-    for (1..Mesh.DOFS + 1) |ui| for (1..Mesh.DOFS + 1) |uj| {
+    for (1..12 + 1) |ui| for (1..12 + 1) |uj| {
         const i: u32 = @intCast(ui);
         const j: u32 = @intCast(uj);
 
