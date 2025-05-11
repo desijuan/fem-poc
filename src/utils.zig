@@ -21,6 +21,30 @@ pub inline fn range(comptime T: type, comptime start: comptime_int, comptime end
     }
 }
 
+const FileBufferedReader = std.io.BufferedReader(4096, std.fs.File.Reader);
+
+pub const ReadFileZError = std.fs.File.OpenError || std.fs.File.GetSeekPosError ||
+    std.fs.File.ReadError || error{ OutOfMemory, ReadError };
+
+pub fn readFileZ(allocator: std.mem.Allocator, path: []const u8) ReadFileZError![:0]const u8 {
+    const file: std.fs.File = try std.fs.cwd().openFile(path, .{ .mode = .read_only });
+    defer file.close();
+
+    var file_br: FileBufferedReader = std.io.bufferedReader(file.reader());
+    const reader: FileBufferedReader.Reader = file_br.reader();
+
+    const size: u64 = try file.getEndPos();
+    const buffer: []u8 = try allocator.alloc(u8, size + 1);
+    errdefer allocator.free(buffer);
+
+    const nread: usize = try reader.readAll(buffer);
+    if (nread != size) return error.ReadError;
+
+    buffer[size] = 0;
+
+    return buffer[0..size :0];
+}
+
 pub fn structFormatFn(comptime T: type) fn (
     self: T,
     comptime fmt: []const u8,

@@ -1,6 +1,7 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 
+const Vec3 = @import("mat3d.zig").Vec3;
 const Mesh = @import("mesh/Mesh.zig");
 const MaterialProperties = @import("mesh/MaterialProperties.zig");
 const Node = Mesh.Node;
@@ -21,7 +22,7 @@ const Self = @This();
 
 pub const format = utils.structFormatFn(Self);
 
-pub fn buildMesh(self: Self, allocator: std.mem.Allocator, elem_size: f64) error{OutOfMemory}!Mesh {
+pub fn buildMesh(self: Self, allocator: std.mem.Allocator, max_elem_size: f64, force_top: Vec3) error{OutOfMemory}!Mesh {
     const mat_props: []MaterialProperties = try allocator.alloc(MaterialProperties, 1);
     errdefer allocator.free(mat_props);
 
@@ -31,7 +32,7 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator, elem_size: f64) error
         .density = self.density,
     };
 
-    const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / elem_size)));
+    const n_beams: usize = @as(usize, @intFromFloat(@ceil(self.height / max_elem_size)));
     const beam_size: f64 = self.height / @as(f64, @floatFromInt(n_beams));
 
     const nodes: []Node = try allocator.alloc(Node, n_beams + 1);
@@ -79,12 +80,10 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator, elem_size: f64) error
     };
 
     // Force
-    // 700 dN in the y direction
+    // read from imput.zon
     bcs[1] = BoundaryCondition{
         .node_idx = beams[n_beams - 1].n1_idx,
-        .type = .{
-            .Force = .{ 0, 7e3, 0 },
-        },
+        .type = .{ .Force = force_top },
     };
 
     return Mesh{

@@ -1,6 +1,7 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 const macros = @import("macros.zig");
+const Input = @import("Input.zig");
 const Matrices = @import("Matrices.zig");
 const WoodPole = @import("WoodPole.zig");
 const Matrix = @import("Matrix.zig");
@@ -8,29 +9,27 @@ const Mesh = @import("mesh/Mesh.zig");
 
 const DPRINT = macros.DPRINT;
 
-const elem_size = 6.0; // 0.5
-
 const Gpa = @import("allocator.zig").Gpa;
 
-pub fn main() error{ OutOfMemory, LapackeError }!void {
+pub fn main() (utils.ReadFileZError || error{ OutOfMemory, ParseZon, LapackeError })!void {
     defer if (comptime @hasDecl(Gpa, "deinit"))
         std.debug.print("da_deinit: {}\n", .{Gpa.deinit()});
 
     const gpa = Gpa.allocator();
 
-    const pole = WoodPole{
-        .height = 1.036e1,
-        .bottom_diameter = 2.911e-1,
-        .top_diameter = 1.86e-1,
-        .fiber_strength = 5.52e7,
-        .modulus_of_elasticity = 1.468e10,
-        .shear_modulus = 1e9,
-        .density = 5.4463e2,
-    };
+    const file_buffer = try utils.readFileZ(gpa, "zon/input.zon");
+    defer gpa.free(file_buffer);
+
+    const input = try std.zon.parse.fromSlice(Input, gpa, file_buffer, null, .{
+        .ignore_unknown_fields = false,
+        .free_on_error = false,
+    });
+
+    const pole = input.pole;
 
     DPRINT("{}", .{pole});
 
-    const mesh: Mesh = try pole.buildMesh(gpa, elem_size);
+    const mesh: Mesh = try pole.buildMesh(gpa, input.max_elem_size, input.force_top);
     defer mesh.deinit(gpa);
 
     DPRINT("{}", .{mesh.mat_props[0]});
@@ -39,7 +38,6 @@ pub fn main() error{ OutOfMemory, LapackeError }!void {
     defer matrices.deinit(gpa);
 
     mesh.assembleGlobalK(matrices.gK, matrices.eK);
-    DPRINT("matrices.gK =\n{}", .{matrices.gK});
 
     mesh.applyBoundaryConditions(matrices.gK, matrices.gf);
     DPRINT("matrices.gK =\n{}", .{matrices.gK});
