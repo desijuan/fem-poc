@@ -55,9 +55,9 @@ pub fn applyBoundaryConditions(self: Self, gK: Matrix, gf: Matrix) void {
             },
 
             .Force => |force| {
-                gf.addTo(d0 + 0, 1, force[0]);
-                gf.addTo(d0 + 1, 1, force[1]);
-                gf.addTo(d0 + 2, 1, force[2]);
+                gf.addTo(d0 + 1, 1, force[0]);
+                gf.addTo(d0 + 2, 1, force[1]);
+                gf.addTo(d0 + 3, 1, force[2]);
             },
         }
     }
