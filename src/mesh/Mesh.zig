@@ -7,14 +7,14 @@ const Matrix = @import("../Matrix.zig");
 const MaterialProperties = @import("MaterialProperties.zig");
 pub const Node = @import("../mat3d.zig").Vec3;
 const Beam = @import("Beam.zig");
-const BeamBC = @import("BeamBC.zig");
+const BoundaryCondition = @import("BoundaryCondition.zig");
 
 const DEBUG = @import("../config.zig").DEBUG;
 
 mat_props: []MaterialProperties,
 nodes: []Node,
 beams: []Beam,
-bcs: []BeamBC,
+bcs: []BoundaryCondition,
 
 const Self = @This();
 
@@ -36,6 +36,31 @@ pub fn assembleGlobalK(self: Self, gK: Matrix, eK: Matrix) void {
         );
 
     for (self.beams) |beam| self.processBeam(beam, gK, eK);
+}
+
+pub fn applyBoundaryConditions(self: Self, gK: Matrix, gf: Matrix) void {
+    for (self.bcs) |bc| {
+        const d0 = 6 * bc.node_idx;
+
+        switch (bc.type) {
+            .Support => {
+                // L
+                for (0..d0) |j| @memset(gK.entries[j * gK.n_rows + d0 ..][0..6], 0);
+                // I
+                @memset(gK.entries[d0 .. d0 + 6 * gK.n_rows], 0);
+                // R
+                for (d0 + 6..gK.n_cols) |j| @memset(gK.entries[j * gK.n_rows + d0 ..][0..6], 0);
+                // D
+                for (utils.range(u32, 1, 7)) |s| gK.set(d0 + s, d0 + s, 1e12);
+            },
+
+            .Force => |force| {
+                gf.addTo(d0 + 0, 1, force[0]);
+                gf.addTo(d0 + 1, 1, force[1]);
+                gf.addTo(d0 + 2, 1, force[2]);
+            },
+        }
+    }
 }
 
 fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
