@@ -18,7 +18,7 @@ const DebugAllocator = struct {
         return da_inst.allocator();
     }
 
-    pub fn deinit() std.heap.Check {
-        return da_inst.deinit();
+    pub fn deinit() void {
+        _ = da_inst.deinit();
     }
 };

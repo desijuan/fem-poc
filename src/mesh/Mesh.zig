@@ -65,9 +65,25 @@ pub fn applyBoundaryConditions(self: Self, gK: Matrix, gf: Matrix) void {
     }
 }
 
-fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
-    DPRINT("{}", .{beam});
+const WIDTH = "6";
 
+pub fn printSolution(self: Self, f: Matrix) void {
+    for (0..self.nodes.len) |i| {
+        const anchor: u32 = @intCast(i * 6);
+
+        std.debug.print("* Node {}\n  height = {}\n", .{ i, self.nodes[i][2] });
+        std.debug.print(
+            "  Forces\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
+            .{ "fx", f.get(anchor + 1, 1), "fy", f.get(anchor + 2, 1), "fz", f.get(anchor + 3, 1) },
+        );
+        std.debug.print(
+            "  Moments\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
+            .{ "tx", f.get(anchor + 4, 1), "ty", f.get(anchor + 5, 1), "tz", f.get(anchor + 6, 1) },
+        );
+    }
+}
+
+fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
     const mat_props: MaterialProperties = self.mat_props[beam.mat_props_idx];
 
     const beamData = Beam.BeamData{
@@ -82,6 +98,5 @@ fn processBeam(self: Self, beam: Beam, gK: Matrix, eK: Matrix) void {
 
     Beam.calcLocalK(beamData, eK);
     Beam.rotate(eK);
-    DPRINT("eK =\n{}", .{eK});
     Beam.accumLocalK(beam.n0_idx, beam.n1_idx, gK, eK);
 }
