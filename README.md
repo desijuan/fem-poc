@@ -5,7 +5,7 @@ Finite Elements Model of an Electric Distribution Woodpole
 ## Example (running with max_elem_size = 6m)
 
 ```
-$ zig build run
+$ zig build run >> README.md
 READING INPUT FROM FILE: "input.zon"
 WoodPole {
    height: 1.036e1,
@@ -24,30 +24,30 @@ DONE!
 SOLUTION:
 * Node 0
   height = 0e0
-  Forces
-    fx = 0e0
-    fy = 0e0
-    fz = 0e0
+  Displacements
+    dx = 0e0
+    dy = 0e0
+    dz = 0e0
   Moments
     tx = 0e0
     ty = 0e0
     tz = 0e0
 * Node 1
   height = 5.18e0
-  Forces
-    fx = 0e0
-    fy = 1.6339778290065297e-2
-    fz = 0e0
+  Displacements
+    dx = 0e0
+    dy = 1.6339778290065297e-2
+    dz = 0e0
   Moments
     tx = -5.6779152359300285e-3
     ty = 0e0
     tz = 0e0
 * Node 2
   height = 1.036e1
-  Forces
-    fx = 0e0
-    fy = 6.1583776394777794e-2
-    fz = 0e0
+  Displacements
+    dx = 0e0
+    dy = 6.1583776394777794e-2
+    dz = 0e0
   Moments
     tx = -1.026258623475096e-2
     ty = 0e0
