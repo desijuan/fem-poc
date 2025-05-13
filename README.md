@@ -5,7 +5,7 @@ Finite Elements Model of an Electric Distribution Woodpole
 ## Example (running with max_elem_size = 6m)
 
 ```
-$ zig build run >> README.md
+$ zig build run
 READING INPUT FROM FILE: "input.zon"
 WoodPole {
    height: 1.036e1,
