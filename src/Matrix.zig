@@ -123,7 +123,7 @@ pub fn solveCholesky(m: Self, f: Self) error{LapackeError}!void {
     }
 
     const info_solve = c.LAPACKE_dpotrs(c.LAPACK_COL_MAJOR, 'L', N, 1, m.itemsC(), N, f.itemsC(), N);
-    if (info_decomp != 0) {
+    if (info_solve != 0) {
         std.debug.print("LAPACKE_dpotrs error {}\n", .{info_solve});
         return error.LapackeError;
     }
