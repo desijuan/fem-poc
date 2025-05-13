@@ -11,13 +11,15 @@ const DPRINT = macros.DPRINT;
 
 const Gpa = @import("allocator.zig").Gpa;
 
+const INPUT_FILE = "input.zon";
+
 pub fn main() (utils.ReadFileZError || error{ OutOfMemory, ParseZon, LapackeError })!void {
-    defer if (comptime @hasDecl(Gpa, "deinit"))
-        std.debug.print("da_deinit: {}\n", .{Gpa.deinit()});
+    defer if (comptime @hasDecl(Gpa, "deinit")) Gpa.deinit();
 
     const gpa = Gpa.allocator();
 
-    const file_buffer = try utils.readFileZ(gpa, "zon/input.zon");
+    DPRINT("READING INPUT FROM FILE: \"{s}\"\n", .{INPUT_FILE});
+    const file_buffer = try utils.readFileZ(gpa, INPUT_FILE);
     defer gpa.free(file_buffer);
 
     const input = try std.zon.parse.fromSlice(Input, gpa, file_buffer, null, .{
@@ -26,25 +28,27 @@ pub fn main() (utils.ReadFileZError || error{ OutOfMemory, ParseZon, LapackeErro
     });
 
     const pole = input.pole;
-
     DPRINT("{}", .{pole});
 
-    const mesh: Mesh = try pole.buildMesh(gpa, input.max_elem_size, input.force_top);
-    defer mesh.deinit(gpa);
+    const force_top = input.force_top;
+    DPRINT("force_top {}\n", .{force_top});
 
-    DPRINT("{}", .{mesh.mat_props[0]});
+    DPRINT("BUILDING MESH...\n", .{});
+    const mesh: Mesh = try pole.buildMesh(gpa, input.max_elem_size, force_top);
+    defer mesh.deinit(gpa);
 
     const matrices = try Matrices.init(gpa, @intCast(mesh.nodes.len));
     defer matrices.deinit(gpa);
 
+    DPRINT("ASSEMBLING STIFFNESS MATRIX...\n", .{});
     mesh.assembleGlobalK(matrices.gK, matrices.eK);
-
     mesh.applyBoundaryConditions(matrices.gK, matrices.gf);
-    DPRINT("matrices.gK =\n{}", .{matrices.gK});
-    DPRINT("gF =\n{}", .{matrices.gf});
 
+    DPRINT("STARTING CALCULATION...\n", .{});
     try Matrix.solveCholesky(matrices.gK, matrices.gf);
-    DPRINT("gF =\n{}", .{matrices.gf});
+
+    DPRINT("DONE!\nSOLUTION:\n", .{});
+    mesh.printSolution(matrices.gf);
 }
 
 comptime {
