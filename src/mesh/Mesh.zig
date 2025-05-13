@@ -18,6 +18,8 @@ bcs: []BoundaryCondition,
 
 const Self = @This();
 
+const BIG_NUMBER = 1e12;
+
 pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
     allocator.free(self.mat_props);
     allocator.free(self.nodes);
@@ -51,7 +53,7 @@ pub fn applyBoundaryConditions(self: Self, gK: Matrix, gf: Matrix) void {
                 // R
                 for (d0 + 6..gK.n_cols) |j| @memset(gK.entries[j * gK.n_rows + d0 ..][0..6], 0);
                 // D
-                for (utils.range(u32, 1, 7)) |s| gK.set(d0 + s, d0 + s, 1e12);
+                for (utils.range(u32, 1, 7)) |s| gK.set(d0 + s, d0 + s, BIG_NUMBER);
             },
 
             .Force => |force| {

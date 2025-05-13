@@ -38,12 +38,10 @@ pub fn buildMesh(self: Self, allocator: std.mem.Allocator, max_elem_size: f64, f
     const nodes: []Node = try allocator.alloc(Node, n_beams + 1);
     errdefer allocator.free(nodes);
 
-    for (0..n_beams) |i| {
-        nodes[i] = Node{ 0.0, 0.0, @as(f64, @floatFromInt(i)) * beam_size };
-        // TODO: TCXWoodPoleFem.fPoleNodesList[i] = i
-
-    } else // Last Node
-    nodes[n_beams] = Node{ 0.0, 0.0, self.height };
+    for (0..n_beams) |i|
+        nodes[i] = Node{ 0.0, 0.0, beam_size * @as(f64, @floatFromInt(i)) }
+    else // Last Node
+        nodes[n_beams] = Node{ 0.0, 0.0, self.height };
 
     const beams: []Beam = try allocator.alloc(Beam, n_beams);
     errdefer allocator.free(beams);
