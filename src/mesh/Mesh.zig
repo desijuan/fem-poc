@@ -73,8 +73,8 @@ pub fn printSolution(self: Self, f: Matrix) void {
 
         std.debug.print("* Node {}\n  height = {}\n", .{ i, self.nodes[i][2] });
         std.debug.print(
-            "  Forces\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
-            .{ "fx", f.get(anchor + 1, 1), "fy", f.get(anchor + 2, 1), "fz", f.get(anchor + 3, 1) },
+            "  Displacements\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
+            .{ "dx", f.get(anchor + 1, 1), "dy", f.get(anchor + 2, 1), "dz", f.get(anchor + 3, 1) },
         );
         std.debug.print(
             "  Moments\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
