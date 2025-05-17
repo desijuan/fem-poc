@@ -68,18 +68,10 @@ pub fn applyBoundaryConditions(self: Self, gK: Matrix, gf: Matrix) void {
 const WIDTH = "6";
 
 pub fn printSolution(self: Self, f: Matrix) void {
-    for (0..self.nodes.len) |i| {
+    std.debug.print("Height (m), Displacement (m)\n", .{});
+    for (self.nodes, 0..self.nodes.len) |n, i| {
         const anchor: u32 = @intCast(i * 6);
-
-        std.debug.print("* Node {}\n  height = {}\n", .{ i, self.nodes[i][2] });
-        std.debug.print(
-            "  Displacements\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
-            .{ "dx", f.get(anchor + 1, 1), "dy", f.get(anchor + 2, 1), "dz", f.get(anchor + 3, 1) },
-        );
-        std.debug.print(
-            "  Moments\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n{s:>" ++ WIDTH ++ "} = {}\n",
-            .{ "tx", f.get(anchor + 4, 1), "ty", f.get(anchor + 5, 1), "tz", f.get(anchor + 6, 1) },
-        );
+        std.debug.print("{}, {}\n", .{ n[2], f.get(anchor + 2, 1) });
     }
 }
 
