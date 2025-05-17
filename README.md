@@ -2,7 +2,9 @@
 
 Finite Elements Model of an Electric Distribution Woodpole
 
-## Example (running with max_elem_size = 6m)
+## Example 1
+
+### With max_elem_size = 6m
 
 ```
 $ zig build run
@@ -53,3 +55,6 @@ SOLUTION:
     ty = 0e0
     tz = 0e0
 ```
+
+### With max_elem_size = 0.1m
+![Height (m) vs Displacement (m)](examples/ex1_plot.png "Height (m) vs Displacement (m)")

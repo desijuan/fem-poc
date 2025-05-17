@@ -1,5 +1,5 @@
 .{
-    .max_elem_size = 6,
+    .max_elem_size = 0.1,
     .pole = .{
         .height = 1.036e1,
         .bottom_diameter = 2.911e-1,
